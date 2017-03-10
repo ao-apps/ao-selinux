@@ -42,7 +42,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 			<ul>
 				<li>Clean programmatic access to <ao:a href="https://fedoraproject.org/wiki/SELinux/semanage">semanage</ao:a>.</li>
 				<li>Full implementation of <code>semanage port</code> commands.</li>
-				<li>Small footprint with minimal dependencies - not part of a big monolithic package.</li>
+				<li>Small footprint, self-contained, no transitive dependencies - not part of a big monolithic package.</li>
 			</ul>
 		</section:section>
 		<section:section label="Motivation">
