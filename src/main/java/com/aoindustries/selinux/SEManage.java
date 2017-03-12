@@ -22,6 +22,8 @@
  */
 package com.aoindustries.selinux;
 
+import com.aoindustries.lang.NotImplementedException;
+import com.aoindustries.lang.ProcessResult;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
@@ -77,6 +79,14 @@ public class SEManage {
 				this.from = from;
 				this.to = to;
 			}
+
+			public int getFrom() {
+				return from;
+			}
+
+			public int getTo() {
+				return to;
+			}
 		}
 
 		/**
@@ -100,12 +110,11 @@ public class SEManage {
 					"--list"
 				};
 			}
+			ProcessResult processResult;
 			synchronized(semanageLock) {
-				// TODO: Use ProcessResult
-				Process p = Runtime.getRuntime().exec(command);
-				// No output to the command
-				p.getOutputStream().close();
+				processResult = ProcessResult.exec(command);
 			}
+			throw new NotImplementedException("TODO: Check status and parse result");
 		}
 
 		/**

@@ -4,10 +4,10 @@ Java API for managing Security-Enhanced Linux (SELinux).
 ## Features
 * Clean programmatic access to [semanage](https://fedoraproject.org/wiki/SELinux/semanage).
 * Full implementation of `semanage port` commands.
-* Small footprint, self-contained, no transitive dependencies - not part of a big monolithic package.
+* Small footprint, minimal dependencies - not part of a big monolithic package.
 
 ## Motivation
-While migrating our servers to CentOS 7 we are running with SELinux in enforcing mode.  Our server configuration process, [AOServ Daemon](https://aoindustries.com/aoserv/daemon/), is written in the Java programming language.  We desire a clean interface to SELinux without having to operate with the `semanage` and other commands directly.
+While migrating our servers to CentOS 7 we are running with SELinux in enforcing mode.  Our server configuration process, [AOServ Daemon](https://aoindustries.com/aoserv/daemon/), is written in the Java programming language.  We desire a clean interface to SELinux without having to operate with `semanage` and other commands directly.
 
 ## Evaluated Alternatives
 We were unable to find any existing implementations via [GitHub](https://github.com/search?utf8=%E2%9C%93&q=java+selinux&type=Repositories&ref=searchresults), [The Central Repository](http://search.maven.org/#search|ga|1|selinux), or [Google Search](https://www.google.com/search?q=java+api+for+selinux).
