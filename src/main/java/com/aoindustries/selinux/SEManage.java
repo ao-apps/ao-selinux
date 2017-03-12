@@ -135,10 +135,26 @@ public class SEManage {
 		private final Protocol protocol;
 		private final List<PortNumber> portNumbers;
 
-		/**
-		 * Make no instances.
-		 */
-		private Port() {
+		private Port(
+			String type,
+			Protocol protocol,
+			List<PortNumber> portNumbers
+		) {
+			this.type = type;
+			this.protocol = protocol;
+			this.portNumbers = portNumbers;
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public Protocol getProtocol() {
+			return protocol;
+		}
+
+		public List<PortNumber> getPortNumbers() {
+			return portNumbers;
 		}
 	}
 
