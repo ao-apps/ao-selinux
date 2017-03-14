@@ -38,7 +38,7 @@ import java.util.TreeSet;
  *
  * @author  AO Industries, Inc.
  */
-public class PortNumber implements Comparable<PortNumber> {
+public class PortRange implements Comparable<PortRange> {
 
 	public static final int MIN_PORT = 1;
 	public static final int MAX_PORT = 65535;
@@ -49,27 +49,27 @@ public class PortNumber implements Comparable<PortNumber> {
 	 * @return  the unmodifiable list of port numbers
 	 */
 	// Not private for unit testing
-	static List<PortNumber> parsePortNumbers(String group) throws IOException {
-		List<PortNumber> portNumbers = new ArrayList<PortNumber>();
+	static List<PortRange> parsePortRanges(String group) throws IOException {
+		List<PortRange> portRanges = new ArrayList<PortRange>();
 		StringTokenizer tokens = new StringTokenizer(group, ", ");
 		while(tokens.hasMoreTokens()) {
 			String token = tokens.nextToken();
 			int hyphenPos = token.indexOf('-');
-			PortNumber newPortNumber;
+			PortRange newPortRange;
 			if(hyphenPos == -1) {
-				newPortNumber = new PortNumber(
+				newPortRange = new PortRange(
 					Integer.parseInt(token)
 				);
 			} else {
-				newPortNumber = new PortNumber(
+				newPortRange = new PortRange(
 					Integer.parseInt(token.substring(0, hyphenPos)),
 					Integer.parseInt(token.substring(hyphenPos + 1))
 				);
 			}
-			portNumbers.add(newPortNumber);
+			portRanges.add(newPortRange);
 		}
-		if(portNumbers.isEmpty()) throw new IOException("No port numbers found: " + group);
-		return Collections.unmodifiableList(portNumbers);
+		if(portRanges.isEmpty()) throw new IOException("No port numbers found: " + group);
+		return Collections.unmodifiableList(portRanges);
 	}
 
 	/**
@@ -79,10 +79,10 @@ public class PortNumber implements Comparable<PortNumber> {
 	 *
 	 * @implNote This implementation is probably not the best regarding computational complexity, but is a simple implementation.
 	 */
-	public static SortedSet<PortNumber> findOverlaps(Iterable<? extends PortNumber> portNumbers) {
-		SortedSet<PortNumber> overlapping = new TreeSet<PortNumber>();
-		for(PortNumber pn1 : portNumbers) {
-			for(PortNumber pn2 : portNumbers) {
+	public static SortedSet<PortRange> findOverlaps(Iterable<? extends PortRange> portRanges) {
+		SortedSet<PortRange> overlapping = new TreeSet<PortRange>();
+		for(PortRange pn1 : portRanges) {
+			for(PortRange pn2 : portRanges) {
 				if(pn1 != pn2 && pn1.overlaps(pn2)) {
 					overlapping.add(pn1);
 					overlapping.add(pn2);
@@ -105,15 +105,15 @@ public class PortNumber implements Comparable<PortNumber> {
 	 *
 	 * @implNote This implementation is probably not the best regarding computational complexity, but is a simple implementation.
 	 */
-	public static SortedSet<PortNumber> coalesce(Set<? extends PortNumber> portNumbers) {
-		SortedSet<PortNumber> result = new TreeSet<PortNumber>(portNumbers);
+	public static SortedSet<PortRange> coalesce(Set<? extends PortRange> portRanges) {
+		SortedSet<PortRange> result = new TreeSet<PortRange>(portRanges);
 		// Repeat until nothing changed
 		MODIFIED_LOOP :
 		while(true) {
-			for(PortNumber pn1 : result) {
-				for(PortNumber pn2 : result) {
+			for(PortRange pn1 : result) {
+				for(PortRange pn2 : result) {
 					if(pn1 != pn2) {
-						PortNumber coalesced = pn1.coalesce(pn2);
+						PortRange coalesced = pn1.coalesce(pn2);
 						if(coalesced != null) {
 							result.remove(pn1);
 							result.remove(pn2);
@@ -132,11 +132,11 @@ public class PortNumber implements Comparable<PortNumber> {
 	private final int from;
 	private final int to;
 
-	public PortNumber(int port) {
+	public PortRange(int port) {
 		this(port, port);
 	}
 
-	public PortNumber(int from, int to) {
+	public PortRange(int from, int to) {
 		if(from < MIN_PORT) throw new IllegalArgumentException("from < MIN_PORT: " + from + " < " + MIN_PORT);
 		if(from > MAX_PORT) throw new IllegalArgumentException("from > MAX_PORT: " + from + " > " + MAX_PORT);
 		if(to < MIN_PORT) throw new IllegalArgumentException("to < MIN_PORT: " + to + " < " + MIN_PORT);
@@ -154,8 +154,8 @@ public class PortNumber implements Comparable<PortNumber> {
 
 	@Override
 	public boolean equals(Object obj) {
-		if(!(obj instanceof PortNumber)) return false;
-		PortNumber other = (PortNumber)obj;
+		if(!(obj instanceof PortRange)) return false;
+		PortRange other = (PortRange)obj;
 		return
 			from == other.from
 			&& to == other.to
@@ -171,7 +171,7 @@ public class PortNumber implements Comparable<PortNumber> {
 	 * Ordered by from, to.
 	 */
 	@Override
-	public int compareTo(PortNumber other) {
+	public int compareTo(PortRange other) {
 		// Java 1.8: Use Integer.compare instead
 		int diff = ComparatorUtils.compare(from, other.from);
 		if(diff != 0) return diff;
@@ -206,7 +206,7 @@ public class PortNumber implements Comparable<PortNumber> {
 	/**
 	 * Checks if this port range overlaps the given port range.
 	 */
-	public boolean overlaps(PortNumber other) {
+	public boolean overlaps(PortRange other) {
 		// See http://stackoverflow.com/questions/3269434/whats-the-most-efficient-way-to-test-two-integer-ranges-for-overlap
 		return from <= other.to && other.from <= to;
 	}
@@ -214,8 +214,8 @@ public class PortNumber implements Comparable<PortNumber> {
 	/**
 	 * Checks if this port range overlaps any of the given port ranges.
 	 */
-	public boolean overlaps(Iterable<? extends PortNumber> portNumbers) {
-		for(PortNumber other : portNumbers) {
+	public boolean overlaps(Iterable<? extends PortRange> portRanges) {
+		for(PortRange other : portRanges) {
 			if(overlaps(other)) return true;
 		}
 		return false;
@@ -226,13 +226,13 @@ public class PortNumber implements Comparable<PortNumber> {
 	 *
 	 * @return  The combined range or {@code null} if they are not adjacent.
 	 */
-	public PortNumber coalesce(PortNumber other) {
+	public PortRange coalesce(PortRange other) {
 		if(to == (other.from - 1)) {
 			// This is immediately before the other
-			return new PortNumber(from, other.to);
+			return new PortRange(from, other.to);
 		} else if(from == (other.to + 1)) {
 			// This is immediately after the other
-			return new PortNumber(other.from, to);
+			return new PortRange(other.from, to);
 		} else {
 			return null;
 		}

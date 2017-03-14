@@ -63,7 +63,7 @@ public class Port {
 					new Port(
 						matcher.group(1),
 						Protocol.valueOf(matcher.group(2)),
-						PortNumber.parsePortNumbers(matcher.group(3))
+						PortRange.parsePortRanges(matcher.group(3))
 					)
 				);
 			} catch(IllegalStateException e) {
@@ -96,12 +96,12 @@ public class Port {
 	 *
 	 * Use {@link #configureTypeAndProtocol(java.lang.String, com.aoindustries.selinux.Protocol, java.util.Set)} if port coalescing is desired.
 	 */
-	public static void add(String type, Protocol protocol, PortNumber portNumber) throws IOException {
+	public static void add(String type, Protocol protocol, PortRange portRange) throws IOException {
 		SEManage.execSemanage(
 			"port", "-a",
 			"-t", type,
 			"-p", protocol.toString(),
-			portNumber.toString()
+			portRange.toString()
 		);
 	}
 
@@ -110,12 +110,12 @@ public class Port {
 	 *
 	 * Use {@link #configureTypeAndProtocol(java.lang.String, com.aoindustries.selinux.Protocol, java.util.Set)} if port coalescing is desired.
 	 */
-	public static void delete(String type, Protocol protocol, PortNumber portNumber) throws IOException {
+	public static void delete(String type, Protocol protocol, PortRange portRange) throws IOException {
 		SEManage.execSemanage(
 			"port", "-d",
 			"-t", type,
 			"-p", protocol.toString(),
-			portNumber.toString()
+			portRange.toString()
 		);
 	}
 
@@ -137,13 +137,13 @@ public class Port {
 	 *
 	 * @return  the modifiable list of port numbers of the given type and protocol
 	 */
-	public static List<PortNumber> filterByTypeAndProtocol(Iterable<? extends Port> ports, String type, Protocol protocol) {
-		List<PortNumber> filtered = new ArrayList<PortNumber>();
+	public static List<PortRange> filterByTypeAndProtocol(Iterable<? extends Port> ports, String type, Protocol protocol) {
+		List<PortRange> filtered = new ArrayList<PortRange>();
 		for(Port port : ports) {
 			if(
 				port.getType().equals(type)
 				&& port.getProtocol() == protocol
-			) filtered.addAll(port.getPortNumbers());
+			) filtered.addAll(port.getPortRanges());
 		}
 		return filtered;
 	}
@@ -155,32 +155,32 @@ public class Port {
 	 *
 	 * @throws  IllegalArgumentException  if any overlapping port numbers found
 	 */
-	public static void configureTypeAndProtocol(String type, Protocol protocol, Set<? extends PortNumber> portNumbers) throws IllegalArgumentException, IOException {
+	public static void configureTypeAndProtocol(String type, Protocol protocol, Set<? extends PortRange> portRanges) throws IllegalArgumentException, IOException {
 		// There must not be any overlapping port ranges
-		SortedSet<PortNumber> overlaps = PortNumber.findOverlaps(portNumbers);
+		SortedSet<PortRange> overlaps = PortRange.findOverlaps(portRanges);
 		if(!overlaps.isEmpty()) {
 			throw new IllegalArgumentException("Port ranges overlap: " + overlaps);
 		}
 		// Auto-coalesce any adjacent port ranges
-		SortedSet<PortNumber> coalesced = PortNumber.coalesce(portNumbers);
+		SortedSet<PortRange> coalesced = PortRange.coalesce(portRanges);
 		// Avoid concurrent configuration of ports
 		synchronized(SEManage.semanageLock) {
-			List<PortNumber> existingPortNumbers = filterByTypeAndProtocol(
+			List<PortRange> existingPortRanges = filterByTypeAndProtocol(
 				list(),
 				type,
 				protocol
 			);
 			// Add any missing ports
-			for(PortNumber portNumber : coalesced) {
-				if(!existingPortNumbers.contains(portNumber)) {
+			for(PortRange portRange : coalesced) {
+				if(!existingPortRanges.contains(portRange)) {
 					// Remove any extra ports that overlap the port range we're adding.
 					{
-						Iterator<PortNumber> existingIter = existingPortNumbers.iterator();
+						Iterator<PortRange> existingIter = existingPortRanges.iterator();
 						while(existingIter.hasNext()) {
-							PortNumber existing = existingIter.next();
+							PortRange existing = existingIter.next();
 							if(
 								!coalesced.contains(existing)
-								&& existing.overlaps(portNumber)
+								&& existing.overlaps(portRange)
 							) {
 								// Remove port number
 								delete(type, protocol, existing);
@@ -188,11 +188,11 @@ public class Port {
 							}
 						}
 					}
-					add(type, protocol, portNumber);
+					add(type, protocol, portRange);
 				}
 			}
 			// Remove any remaining extra ports (those that do not overlap the expected ports)
-			for(PortNumber existing : existingPortNumbers) {
+			for(PortRange existing : existingPortRanges) {
 				if(!coalesced.contains(existing)) {
 					delete(type, protocol, existing);
 				}
@@ -202,21 +202,21 @@ public class Port {
 
 	private final String type;
 	private final Protocol protocol;
-	private final List<PortNumber> portNumbers;
+	private final List<PortRange> portRanges;
 
 	Port(
 		String type,
 		Protocol protocol,
-		List<PortNumber> portNumbers
+		List<PortRange> portRanges
 	) {
 		this.type = type;
 		this.protocol = protocol;
-		this.portNumbers = portNumbers;
+		this.portRanges = portRanges;
 	}
 
 	@Override
 	public String toString() {
-		return "(" + type + ", " + protocol + ", " + portNumbers + ")";
+		return "(" + type + ", " + protocol + ", " + portRanges + ")";
 	}
 
 	@Override
@@ -226,7 +226,7 @@ public class Port {
 		return
 			type.equals(other.type)
 			&& protocol == other.protocol
-			&& portNumbers.equals(other.portNumbers)
+			&& portRanges.equals(other.portRanges)
 		;
 	}
 
@@ -234,7 +234,7 @@ public class Port {
 	public int hashCode() {
 		int hash = type.hashCode();
 		hash = hash * 31 + protocol.hashCode();
-		hash = hash * 31 + portNumbers.hashCode();
+		hash = hash * 31 + portRanges.hashCode();
 		return hash;
 	}
 
@@ -246,7 +246,7 @@ public class Port {
 		return protocol;
 	}
 
-	public List<PortNumber> getPortNumbers() {
-		return portNumbers;
+	public List<PortRange> getPortRanges() {
+		return portRanges;
 	}
 }
