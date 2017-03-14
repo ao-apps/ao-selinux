@@ -32,6 +32,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		title="@{documented.name}"
 		description="@{documented.description}"
 		datePublished="2017-03-12T18:31:26-0500"
+		dateModified="2017-03-14T18:41:43-0500"
 	>
 		<core:child page="changelog.jspx" />
 		<core:child page="apidocs/index.jspx" />
@@ -41,7 +42,12 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		<section:section label="Features">
 			<ul>
 				<li>Clean programmatic access to <ao:a href="https://fedoraproject.org/wiki/SELinux/semanage">semanage</ao:a>.</li>
-				<li>Full implementation of <code>semanage port</code> commands.</li>
+				<li>Implementation of <code>semanage port</code> commands:
+					<ul>
+						<li>Easily reconfigure all ports for a given SELinux type.</li>
+						<li>Automatically coalesces adjacent port ranges.</li>
+					</ul>
+				</li>
 				<li>Small footprint, minimal dependencies - not part of a big monolithic package.</li>
 			</ul>
 		</section:section>

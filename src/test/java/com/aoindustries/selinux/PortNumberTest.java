@@ -17,7 +17,7 @@ public class PortNumberTest {
 	@Test
 	public void testParsePortNumbers1() throws IOException {
 		assertEquals(
-			Arrays.asList(new PortNumber(7001, 7001)),
+			Arrays.asList(new PortNumber(7001)),
 			PortNumber.parsePortNumbers("7001")
 		);
 	}
@@ -26,8 +26,8 @@ public class PortNumberTest {
 	public void testParsePortNumbers2() throws IOException {
 		assertEquals(
 			Arrays.asList(
-				new PortNumber(7000, 7000),
-				new PortNumber(7005, 7005)
+				new PortNumber(7000),
+				new PortNumber(7005)
 			),
 			PortNumber.parsePortNumbers("7000, 7005")
 		);
@@ -45,7 +45,7 @@ public class PortNumberTest {
 	public void testParsePortNumbers4() throws IOException {
 		assertEquals(
 			Arrays.asList(
-				new PortNumber(15672, 15672),
+				new PortNumber(15672),
 				new PortNumber(5671, 5672)
 			),
 			PortNumber.parsePortNumbers("15672, 5671-5672")
@@ -56,9 +56,9 @@ public class PortNumberTest {
 	public void testParsePortNumbers5() throws IOException {
 		assertEquals(
 			Arrays.asList(
-				new PortNumber(2427, 2427),
-				new PortNumber(2727, 2727),
-				new PortNumber(4569, 4569)
+				new PortNumber(2427),
+				new PortNumber(2727),
+				new PortNumber(4569)
 			),
 			PortNumber.parsePortNumbers("2427, 2727, 4569")
 		);
@@ -68,8 +68,8 @@ public class PortNumberTest {
 	public void testParsePortNumbers6() throws IOException {
 		assertEquals(
 			Arrays.asList(
-				new PortNumber(5149, 5149),
-				new PortNumber(40040, 40040),
+				new PortNumber(5149),
+				new PortNumber(40040),
 				new PortNumber(50006, 50008)
 			),
 			PortNumber.parsePortNumbers("5149, 40040, 50006-50008")
@@ -115,5 +115,95 @@ public class PortNumberTest {
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortNumberFromBiggerTo() throws IOException {
 		new PortNumber(10, 1);
+	}
+
+	@Test
+	public void testOverlaps1() {
+		assertTrue(
+			new PortNumber(10).overlaps(
+				new PortNumber(10)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps2() {
+		assertTrue(
+			new PortNumber(5, 10).overlaps(
+				new PortNumber(10)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps3() {
+		assertTrue(
+			new PortNumber(5, 10).overlaps(
+				new PortNumber(5)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps4() {
+		assertFalse(
+			new PortNumber(5).overlaps(
+				new PortNumber(11)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps5() {
+		assertFalse(
+			new PortNumber(5, 10).overlaps(
+				new PortNumber(11)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps6() {
+		assertFalse(
+			new PortNumber(5, 10).overlaps(
+				new PortNumber(4)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps7() {
+		assertTrue(
+			new PortNumber(5, 10).overlaps(
+				new PortNumber(1, 5)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps8() {
+		assertTrue(
+			new PortNumber(5, 10).overlaps(
+				new PortNumber(10, 15)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps9() {
+		assertFalse(
+			new PortNumber(5, 10).overlaps(
+				new PortNumber(1, 4)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps10() {
+		assertFalse(
+			new PortNumber(5, 10).overlaps(
+				new PortNumber(11, 15)
+			)
+		);
 	}
 }

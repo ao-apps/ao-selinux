@@ -28,7 +28,10 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -86,6 +89,115 @@ public class Port {
 	 */
 	public static List<Port> localList() throws IOException {
 		return parseList(SEManage.execSemanage("port", "--noheading", "--list", "--locallist").getStdout());
+	}
+
+	/**
+	 * Calls <code>semanage port -a -t <i>type</i> -p <i>protocol</i> <i>port(s)</i></code>.
+	 *
+	 * Use {@link #configureTypeAndProtocol(java.lang.String, com.aoindustries.selinux.Protocol, java.util.Set)} if port coalescing is desired.
+	 */
+	public static void add(String type, Protocol protocol, PortNumber portNumber) throws IOException {
+		SEManage.execSemanage(
+			"port", "-a",
+			"-t", type,
+			"-p", protocol.toString(),
+			portNumber.toString()
+		);
+	}
+
+	/**
+	 * Calls <code>semanage port -d -t <i>type</i> -p <i>protocol</i> <i>port(s)</i></code>.
+	 *
+	 * Use {@link #configureTypeAndProtocol(java.lang.String, com.aoindustries.selinux.Protocol, java.util.Set)} if port coalescing is desired.
+	 */
+	public static void delete(String type, Protocol protocol, PortNumber portNumber) throws IOException {
+		SEManage.execSemanage(
+			"port", "-d",
+			"-t", type,
+			"-p", protocol.toString(),
+			portNumber.toString()
+		);
+	}
+
+	/**
+	 * Filters a list of ports by SELinux type.
+	 *
+	 * @return  the modifiable list of ports of the given type
+	 */
+	public static List<Port> filterByType(Iterable<? extends Port> ports, String type) {
+		List<Port> filtered = new ArrayList<Port>();
+		for(Port port : ports) {
+			if(port.getType().equals(type)) filtered.add(port);
+		}
+		return filtered;
+	}
+
+	/**
+	 * Filters a list of ports by SELinux type and protocol.
+	 *
+	 * @return  the modifiable list of port numbers of the given type and protocol
+	 */
+	public static List<PortNumber> filterByTypeAndProtocol(Iterable<? extends Port> ports, String type, Protocol protocol) {
+		List<PortNumber> filtered = new ArrayList<PortNumber>();
+		for(Port port : ports) {
+			if(
+				port.getType().equals(type)
+				&& port.getProtocol() == protocol
+			) filtered.addAll(port.getPortNumbers());
+		}
+		return filtered;
+	}
+
+	/**
+	 * Configures one SELinux type and protocol to have the given set of ports.
+	 * Any missing port ranges are added first.
+	 * Then any extra port ranges are removed.
+	 *
+	 * @throws  IllegalArgumentException  if any overlapping port numbers found
+	 */
+	public static void configureTypeAndProtocol(String type, Protocol protocol, Set<? extends PortNumber> portNumbers) throws IllegalArgumentException, IOException {
+		// There must not be any overlapping port ranges
+		SortedSet<PortNumber> overlaps = PortNumber.findOverlaps(portNumbers);
+		if(!overlaps.isEmpty()) {
+			throw new IllegalArgumentException("Port ranges overlap: " + overlaps);
+		}
+		// Auto-coalesce any adjacent port ranges
+		SortedSet<PortNumber> coalesced = PortNumber.coalesce(portNumbers);
+		// Avoid concurrent configuration of ports
+		synchronized(SEManage.semanageLock) {
+			List<PortNumber> existingPortNumbers = filterByTypeAndProtocol(
+				list(),
+				type,
+				protocol
+			);
+			// Add any missing ports
+			for(PortNumber portNumber : coalesced) {
+				if(!existingPortNumbers.contains(portNumber)) {
+					// Remove any extra ports that overlap the port range we're adding.
+					{
+						Iterator<PortNumber> existingIter = existingPortNumbers.iterator();
+						while(existingIter.hasNext()) {
+							PortNumber existing = existingIter.next();
+							if(
+								!coalesced.contains(existing)
+								&& existing.overlaps(portNumber)
+							) {
+								// Remove port number
+								delete(type, protocol, existing);
+								existingIter.remove();
+							}
+						}
+					}
+					add(type, protocol, portNumber);
+				}
+			}
+			// Remove any remaining extra ports (those that do not overlap the expected ports)
+			for(PortNumber existing : existingPortNumbers) {
+				if(!coalesced.contains(existing)) {
+					delete(type, protocol, existing);
+				}
+			}
+		}
 	}
 
 	private final String type;

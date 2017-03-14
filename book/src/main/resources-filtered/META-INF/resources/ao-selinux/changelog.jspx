@@ -36,6 +36,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		shortTitle="Changelog"
 		tocLevels="1"
 		datePublished="2017-03-10T14:04:26-0600"
+		dateModified="2017-03-14T18:41:43-0500"
 	>
 		<!-- The current snapshot, unreleased version -->
 		<c:set var="version" value="@{com.aoindustries:ao-selinux:pom.version}" />
@@ -53,7 +54,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 			>
 				<ul>
 					<li>New Java API for managing Security-Enhanced Linux (SELinux).</li>
-					<li>Added support for all <code>semanage port</code> commands.</li>
+					<li>Added support for <code>semanage port</code> commands.</li>
 				</ul>
 			</changelog:release>
 		</c:if>

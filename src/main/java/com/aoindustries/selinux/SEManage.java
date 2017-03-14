@@ -43,7 +43,7 @@ class SEManage {
 	 * Serializes access to the underlying <code>semanage</code> command.
 	 */
 	private static class SemanageLock {}
-	private static final SemanageLock semanageLock = new SemanageLock();
+	static final SemanageLock semanageLock = new SemanageLock();
 
 	/**
 	 * Calls the <code>semanage</code> command with the given arguments

@@ -48,21 +48,21 @@ public class PortTest {
 				new Port(
 					"afs3_callback_port_t",
 					Protocol.tcp,
-					Collections.singletonList(new PortNumber(7001, 7001))
+					Collections.singletonList(new PortNumber(7001))
 				),
 				// afs3_callback_port_t           udp      7001
 				new Port(
 					"afs3_callback_port_t",
 					Protocol.udp,
-					Collections.singletonList(new PortNumber(7001, 7001))
+					Collections.singletonList(new PortNumber(7001))
 				),
 				// afs_fs_port_t                  udp      7000, 7005
 				new Port(
 					"afs_fs_port_t",
 					Protocol.udp,
 					Arrays.asList(
-						new PortNumber(7000, 7000),
-						new PortNumber(7005, 7005)
+						new PortNumber(7000),
+						new PortNumber(7005)
 					)
 				),
 				// amanda_port_t                  tcp      10080-10083
@@ -81,13 +81,13 @@ public class PortTest {
 				new Port(
 					"ssh_port_t",
 					Protocol.tcp,
-					Collections.singletonList(new PortNumber(22, 22))
+					Collections.singletonList(new PortNumber(22))
 				),
 				// zope_port_t                    tcp      8021
 				new Port(
 					"zope_port_t",
 					Protocol.tcp,
-					Collections.singletonList(new PortNumber(8021, 8021))
+					Collections.singletonList(new PortNumber(8021))
 				)
 			),
 			Port.parseList(testData)
