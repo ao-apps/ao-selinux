@@ -15,9 +15,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class SEManagePortTest {
+public class PortTest {
 	
-	public SEManagePortTest() {
+	public PortTest() {
 	}
 
 	private String testData;
@@ -25,7 +25,7 @@ public class SEManagePortTest {
 	@Before
 	public void setUp() throws IOException {
 		final String RESOURCE = "semanage-port-noheading-list.txt";
-		InputStream resourceIn = SEManagePortTest.class.getResourceAsStream(RESOURCE);
+		InputStream resourceIn = PortTest.class.getResourceAsStream(RESOURCE);
 		if(resourceIn == null) throw new IOException("Resource not found: " + RESOURCE);
 		Reader in = new InputStreamReader(resourceIn, Charsets.UTF_8);
 		try {
@@ -45,52 +45,52 @@ public class SEManagePortTest {
 		assertEquals(
 			Arrays.asList(
 				// afs3_callback_port_t           tcp      7001
-				new SEManage.Port(
+				new Port(
 					"afs3_callback_port_t",
-					SEManage.Port.Protocol.tcp,
-					Collections.singletonList(new SEManage.Port.PortNumber(7001, 7001))
+					Protocol.tcp,
+					Collections.singletonList(new PortNumber(7001, 7001))
 				),
 				// afs3_callback_port_t           udp      7001
-				new SEManage.Port(
+				new Port(
 					"afs3_callback_port_t",
-					SEManage.Port.Protocol.udp,
-					Collections.singletonList(new SEManage.Port.PortNumber(7001, 7001))
+					Protocol.udp,
+					Collections.singletonList(new PortNumber(7001, 7001))
 				),
 				// afs_fs_port_t                  udp      7000, 7005
-				new SEManage.Port(
+				new Port(
 					"afs_fs_port_t",
-					SEManage.Port.Protocol.udp,
+					Protocol.udp,
 					Arrays.asList(
-						new SEManage.Port.PortNumber(7000, 7000),
-						new SEManage.Port.PortNumber(7005, 7005)
+						new PortNumber(7000, 7000),
+						new PortNumber(7005, 7005)
 					)
 				),
 				// amanda_port_t                  tcp      10080-10083
-				new SEManage.Port(
+				new Port(
 					"amanda_port_t",
-					SEManage.Port.Protocol.tcp,
-					Collections.singletonList(new SEManage.Port.PortNumber(10080, 10083))
+					Protocol.tcp,
+					Collections.singletonList(new PortNumber(10080, 10083))
 				),
 				// amanda_port_t                  udp      10080-10082
-				new SEManage.Port(
+				new Port(
 					"amanda_port_t",
-					SEManage.Port.Protocol.udp,
-					Collections.singletonList(new SEManage.Port.PortNumber(10080, 10082))
+					Protocol.udp,
+					Collections.singletonList(new PortNumber(10080, 10082))
 				),
 				// ssh_port_t                     tcp      22
-				new SEManage.Port(
+				new Port(
 					"ssh_port_t",
-					SEManage.Port.Protocol.tcp,
-					Collections.singletonList(new SEManage.Port.PortNumber(22, 22))
+					Protocol.tcp,
+					Collections.singletonList(new PortNumber(22, 22))
 				),
 				// zope_port_t                    tcp      8021
-				new SEManage.Port(
+				new Port(
 					"zope_port_t",
-					SEManage.Port.Protocol.tcp,
-					Collections.singletonList(new SEManage.Port.PortNumber(8021, 8021))
+					Protocol.tcp,
+					Collections.singletonList(new PortNumber(8021, 8021))
 				)
 			),
-			SEManage.Port.parseList(testData)
+			Port.parseList(testData)
 		);
 	}
 }

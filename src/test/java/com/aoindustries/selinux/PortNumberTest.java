@@ -9,16 +9,16 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class SEManagePortNumberTest {
+public class PortNumberTest {
 	
-	public SEManagePortNumberTest() {
+	public PortNumberTest() {
 	}
 
 	@Test
 	public void testParsePortNumbers1() throws IOException {
 		assertEquals(
-			Arrays.asList(new SEManage.Port.PortNumber(7001, 7001)),
-			SEManage.Port.parsePortNumbers("7001")
+			Arrays.asList(new PortNumber(7001, 7001)),
+			PortNumber.parsePortNumbers("7001")
 		);
 	}
 
@@ -26,18 +26,18 @@ public class SEManagePortNumberTest {
 	public void testParsePortNumbers2() throws IOException {
 		assertEquals(
 			Arrays.asList(
-				new SEManage.Port.PortNumber(7000, 7000),
-				new SEManage.Port.PortNumber(7005, 7005)
+				new PortNumber(7000, 7000),
+				new PortNumber(7005, 7005)
 			),
-			SEManage.Port.parsePortNumbers("7000, 7005")
+			PortNumber.parsePortNumbers("7000, 7005")
 		);
 	}
 
 	@Test
 	public void testParsePortNumbers3() throws IOException {
 		assertEquals(
-			Arrays.asList(new SEManage.Port.PortNumber(10080, 10083)),
-			SEManage.Port.parsePortNumbers("10080-10083")
+			Arrays.asList(new PortNumber(10080, 10083)),
+			PortNumber.parsePortNumbers("10080-10083")
 		);
 	}
 
@@ -45,10 +45,10 @@ public class SEManagePortNumberTest {
 	public void testParsePortNumbers4() throws IOException {
 		assertEquals(
 			Arrays.asList(
-				new SEManage.Port.PortNumber(15672, 15672),
-				new SEManage.Port.PortNumber(5671, 5672)
+				new PortNumber(15672, 15672),
+				new PortNumber(5671, 5672)
 			),
-			SEManage.Port.parsePortNumbers("15672, 5671-5672")
+			PortNumber.parsePortNumbers("15672, 5671-5672")
 		);
 	}
 
@@ -56,11 +56,11 @@ public class SEManagePortNumberTest {
 	public void testParsePortNumbers5() throws IOException {
 		assertEquals(
 			Arrays.asList(
-				new SEManage.Port.PortNumber(2427, 2427),
-				new SEManage.Port.PortNumber(2727, 2727),
-				new SEManage.Port.PortNumber(4569, 4569)
+				new PortNumber(2427, 2427),
+				new PortNumber(2727, 2727),
+				new PortNumber(4569, 4569)
 			),
-			SEManage.Port.parsePortNumbers("2427, 2727, 4569")
+			PortNumber.parsePortNumbers("2427, 2727, 4569")
 		);
 	}
 
@@ -68,52 +68,52 @@ public class SEManagePortNumberTest {
 	public void testParsePortNumbers6() throws IOException {
 		assertEquals(
 			Arrays.asList(
-				new SEManage.Port.PortNumber(5149, 5149),
-				new SEManage.Port.PortNumber(40040, 40040),
-				new SEManage.Port.PortNumber(50006, 50008)
+				new PortNumber(5149, 5149),
+				new PortNumber(40040, 40040),
+				new PortNumber(50006, 50008)
 			),
-			SEManage.Port.parsePortNumbers("5149, 40040, 50006-50008")
+			PortNumber.parsePortNumbers("5149, 40040, 50006-50008")
 		);
 	}
 
 	public void testPortNumberMinFrom() throws IOException {
-		new SEManage.Port.PortNumber(1, 10);
+		new PortNumber(1, 10);
 	}
 
 	public void testPortNumberMaxFrom() throws IOException {
-		new SEManage.Port.PortNumber(65535, 65535);
+		new PortNumber(65535, 65535);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortNumberLowFrom() throws IOException {
-		new SEManage.Port.PortNumber(0, 10);
+		new PortNumber(0, 10);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortNumberHighFrom() throws IOException {
-		new SEManage.Port.PortNumber(65536, 10);
+		new PortNumber(65536, 10);
 	}
 
 	public void testPortNumberMinTo() throws IOException {
-		new SEManage.Port.PortNumber(1, 1);
+		new PortNumber(1, 1);
 	}
 
 	public void testPortNumberMaxTo() throws IOException {
-		new SEManage.Port.PortNumber(10, 65535);
+		new PortNumber(10, 65535);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortNumberLowTo() throws IOException {
-		new SEManage.Port.PortNumber(10, 0);
+		new PortNumber(10, 0);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortNumberHighTo() throws IOException {
-		new SEManage.Port.PortNumber(10, 65536);
+		new PortNumber(10, 65536);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortNumberFromBiggerTo() throws IOException {
-		new SEManage.Port.PortNumber(10, 1);
+		new PortNumber(10, 1);
 	}
 }
