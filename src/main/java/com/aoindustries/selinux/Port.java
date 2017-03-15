@@ -29,6 +29,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -337,7 +338,7 @@ public class Port implements Comparable<Port> {
 
 	/**
 	 * @see  #getPolicy()
-	 * // TODO: Add tests
+	 * // TODO: Add tests, such as making sure all ports 1-65535 covered both tcp and udp
 	 */
 	static SortedMap<Port, String> parsePolicy(SortedMap<Port, String> localPolicy, SortedMap<Port, String> defaultPolicy) {
 		assert findOverlaps(localPolicy.keySet()).isEmpty();
@@ -349,29 +350,117 @@ public class Port implements Comparable<Port> {
 				policy.put(port, extensionEntry.getValue());
 			}
 		}
-		assert findOverlaps(policy.keySet()).isEmpty();
+		boolean assertEnabled = false;
+		assert assertEnabled = true; // Intentional side-effect of assertions
+		if(assertEnabled) {
+			Set<Port> overlaps = findOverlaps(policy.keySet());
+			if(!overlaps.isEmpty()) {
+				for(Map.Entry<Port, String> entry : policy.entrySet()) {
+					System.err.println(entry.getKey() + "=" + entry.getValue());
+				}
+				throw new AssertionError("Ports overlap: " + overlaps);
+			}
+		}
+		// Will add default policy in the order from largest ranges to smallest so that
+		// splitting only happens to entries already in the set (one-way for simpler code).
+		SortedMap<Port, String> sortedDefaultPolicy = new TreeMap<Port, String>(
+			new Comparator<Port>() {
+				/**
+				 * Orders by (to-from) desc, protocol asc, from asc, to asc
+				 */
+				@Override
+				public int compare(Port p1, Port p2) {
+					// (to-from) desc
+					int size1 = p1.getTo() - p1.getFrom();
+					int size2 = p2.getTo() - p2.getFrom();
+					int diff = ComparatorUtils.compare(size2, size1);
+					if(diff != 0) return diff;
+					// to asc, from asc
+					return p1.compareTo(p2);
+				}
+			}
+		);
+		sortedDefaultPolicy.putAll(defaultPolicy);
 		// Next, add default policy, splitting on overlapping subsets
-		for(Map.Entry<Port, String> defaultEntry : defaultPolicy.entrySet()) {
+		for(Map.Entry<Port, String> defaultEntry : sortedDefaultPolicy.entrySet()) {
 			Port defaultPort = defaultEntry.getKey();
 			String defaultType = defaultEntry.getValue();
 			// Look for any existing overlapping port
 			boolean added = false;
-			// TODO: This can be multiple splits...
 			for(Map.Entry<Port, String> existingEntry : policy.entrySet()) {
-				// TODO
+				Port existingPort = existingEntry.getKey();
+				if(defaultPort.overlaps(existingPort)) {
+					String existingType = existingEntry.getValue(); // Get value before removing from map, because value of entry will change!
+					if(policy.remove(existingPort) != existingType) throw new AssertionError();
+					Port smallPort;
+					String smallType;
+					Port bigPort;
+					String bigType;
+					if(defaultPort.isSubRangeOf(existingPort)) {
+						smallPort = defaultPort;
+						smallType = defaultType;
+						bigPort = existingPort;
+						bigType = existingType;
+					} else if(existingPort.isSubRangeOf(defaultPort)) {
+						throw new AssertionError("Should not split this direction because adding default policy from biggest ranges first");
+						//smallPort = existingPort;
+						//smallType = existingType;
+						//bigPort = defaultPort;
+						//bigType = defaultType;
+					} else {
+						throw new AssertionError(
+							"Default policy ports overlap but neither is a subrange of the other: "
+							+ existingPort + "=" + existingType
+							+ " and " + defaultPort + "=" + defaultType
+						);
+					}
+					// Small is added in its entirety
+					if(policy.put(smallPort, smallType) != null) throw new AssertionError();
+					// Big is split and added
+					Port lowerSplit = bigPort.splitBelow(smallPort.getFrom());
+					if(lowerSplit != null && policy.put(lowerSplit, bigType) != null) throw new AssertionError();
+					Port upperSplit = bigPort.splitAbove(smallPort.getTo());
+					if(upperSplit != null && policy.put(upperSplit, bigType) != null) throw new AssertionError();
+					// Existing entries may be completed replaced now: if(lowerSplit == null && upperSplit == null) throw new AssertionError();
+					added = true;
+					break;
+				}
 			}
 			if(!added) policy.put(defaultPort, defaultType);
 		}
-		assert findOverlaps(policy.keySet()).isEmpty();
+		if(assertEnabled) {
+			Set<Port> overlaps = findOverlaps(policy.keySet());
+			if(!overlaps.isEmpty()) {
+				for(Map.Entry<Port, String> entry : policy.entrySet()) {
+					System.err.println(entry.getKey() + "=" + entry.getValue());
+				}
+				throw new AssertionError("Ports overlap: " + overlaps);
+			}
+		}
 		// Finally, add local policy, removing or splitting any overlapping
 		// TODO
-		assert findOverlaps(policy.keySet()).isEmpty();
+		// Coalesce (Test for saphostctrl_port_t ports 1128 and 1129), test for any not coalesced
+		// TODO
+		// TODO: 64000-64010/udp=traceroute_port_t - check firewall traceroute port ranges we use
+		if(assertEnabled) {
+			Set<Port> overlaps = findOverlaps(policy.keySet());
+			if(!overlaps.isEmpty()) {
+				for(Map.Entry<Port, String> entry : policy.entrySet()) {
+					System.err.println(entry.getKey() + "=" + entry.getValue());
+				}
+				throw new AssertionError("Ports overlap: " + overlaps);
+			}
+		}
 		// Make sure no overlaps in the resulting policy
+		// TODO: Move this to a shared check method
 		Set<Port> overlaps = findOverlaps(policy.keySet());
 		if(!overlaps.isEmpty()) {
+			for(Map.Entry<Port, String> entry : policy.entrySet()) {
+				System.err.println(entry.getKey() + "=" + entry.getValue());
+			}
 			throw new AssertionError("Ports overlap: " + overlaps);
 		}
-		return localPolicy;
+		return policy;
 	}
 
 	/**
@@ -651,4 +740,40 @@ public class Port implements Comparable<Port> {
 		return null;
 	}
 	 */
+
+	/**
+	 * Checks if this port is a subrange of the other port.
+	 * If the same range, it is considered a subrange.
+	 *
+	 * TODO: Add tests
+	 */
+	boolean isSubRangeOf(Port other) {
+		return
+			protocol == other.protocol
+			&& from >= other.from
+			&& to <= other.to
+		;
+	}
+
+	/**
+	 * Gets the part of this port range below the given port or {@code null} if none.
+	 *
+	 * TODO: Add tests
+	 */
+	Port splitBelow(int below) {
+		int newTo = Math.min(to, below-1);
+		if(newTo >= from) return new Port(protocol, from, newTo);
+		else return null;
+	}
+
+	/**
+	 * Gets the part of this port range above the given port or {@code null} if none.
+	 *
+	 * TODO: Add tests
+	 */
+	Port splitAbove(int above) {
+		int newFrom = Math.max(from, above+1);
+		if(newFrom <= to) return new Port(protocol, newFrom, to);
+		else return null;
+	}
 }

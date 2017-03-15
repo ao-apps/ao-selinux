@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -145,6 +146,16 @@ public class PortTest {
 			"http_port_t",
 			defaultPolicy.get(new Port(Protocol.tcp, 8008))
 		);
+	}
+
+	@Test
+	public void testParsePolicy() throws IOException {
+		SortedMap<Port, String> localPolicy = Port.parseLocalPolicy(testDataLocalWithModified8008);
+		SortedMap<Port, String> defaultPolicy = Port.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
+		SortedMap<Port, String> policy = Port.parsePolicy(localPolicy, defaultPolicy);
+		for(Map.Entry<Port, String> entry : policy.entrySet()) {
+			System.out.println(entry.getKey() + "=" + entry.getValue());
+		}
 	}
 
 	public void testPortRangeMinFrom() throws IOException {
