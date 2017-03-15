@@ -26,6 +26,7 @@ package com.aoindustries.selinux;
  * @author  AO Industries, Inc.
  */
 public enum Protocol {
+	// tcp before udp matches ordering of semanage port --list
 	tcp,
 	udp
 }
