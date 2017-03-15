@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
  * TODO: Log changes as INFO level
  * TODO: assert no port overlaps in list
  * TODO: Add more tests
- * TODO: Change instead of list of Port, but mapping if (Protocol,PortRange) -> SELinx type
+ * TODO: Change instead of list of Port, but mapping if (Protocol,PortRange) -> SELinx type (careful to handle local modifications overriding default policy)
  *
  * @author  AO Industries, Inc.
  */
@@ -160,8 +160,13 @@ public class Port {
 
 	/**
 	 * Configures one SELinux type and protocol to have the given set of ports.
-	 * Any missing port ranges are added first.
+	 * First any missing port ranges are added while removing any existing conflicting ports.
 	 * Then any extra port ranges are removed.
+	 * <p>
+	 * <code>selinux port -m ...</code> can be used to modify a port provided by the default
+	 * policy, but this current implementation will not do so.  Resolving this conflict is
+	 * beyond the scope of the current release.
+	 * </p>
 	 *
 	 * @throws  IllegalArgumentException  if any overlapping port numbers found
 	 */
