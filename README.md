@@ -4,9 +4,9 @@ Java API for managing Security-Enhanced Linux (SELinux).
 ## Features
 * Clean programmatic access to [semanage](https://fedoraproject.org/wiki/SELinux/semanage).
 * Implementation of `semanage port` commands:
- * Easily reconfigure all ports for a given SELinux type.
- * Automatically coalesces adjacent port ranges.
- * Presents a single cohesive view of all ports, hiding the nuance and complexity of the interactions between default policy and local policy.
+    * Easily reconfigure all ports for a given SELinux type.
+    * Automatically coalesces adjacent port ranges.
+    * Presents a single cohesive view of all ports, hiding the nuance and complexity of the interactions between default policy and local policy.
 * Small footprint, minimal dependencies - not part of a big monolithic package.
 
 ## Motivation
