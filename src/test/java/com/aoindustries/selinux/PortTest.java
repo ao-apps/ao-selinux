@@ -17,27 +17,34 @@ import static org.junit.Assert.*;
 
 public class PortTest {
 	
-	public PortTest() {
-	}
-
-	private String testData;
-
-	@Before
-	public void setUp() throws IOException {
-		final String RESOURCE = "semanage-port-noheading-list.txt";
-		InputStream resourceIn = PortTest.class.getResourceAsStream(RESOURCE);
-		if(resourceIn == null) throw new IOException("Resource not found: " + RESOURCE);
+	private static String loadResource(String resource) throws IOException {
+		InputStream resourceIn = PortTest.class.getResourceAsStream(resource);
+		if(resourceIn == null) throw new IOException("Resource not found: " + resource);
 		Reader in = new InputStreamReader(resourceIn, Charsets.UTF_8);
 		try {
-			testData = IoUtils.readFully(in);
+			return IoUtils.readFully(in);
 		} finally {
 			in.close();
 		}
 	}
+
+	public PortTest() {
+	}
+
+	private String testDataSimpleSubset;
+	// TODO: Test that the overridden port 8008 is showing as ssh_type_t
+	private String testDataFullWithModified8008;
+
+	@Before
+	public void setUp() throws IOException {
+		testDataSimpleSubset = loadResource("semanage-port-noheading-list-simple-subset.txt");
+		testDataFullWithModified8008 = loadResource("semanage-port-noheading-list-full-with-modified-8008.txt");
+	}
 	
 	@After
 	public void tearDown() {
-		testData = null;
+		testDataSimpleSubset = null;
+		testDataFullWithModified8008 = null;
 	}
 	
 	@Test
@@ -90,7 +97,7 @@ public class PortTest {
 					Collections.singletonList(new PortRange(8021))
 				)
 			),
-			Port.parseList(testData)
+			Port.parseList(testDataSimpleSubset)
 		);
 	}
 }

@@ -37,6 +37,26 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * A {@link Port} is a non-overlapping mapping from (protocol, port-range) to SELinux type.
+ * <p>
+ * Ports that are part of the default policy may not be removed, but their
+ * effective type may be modified with <code>semanage port -m ...</code>.
+ * Ports may be added that overlap those of the default policy, but if they exactly
+ * match the port range of the default policy, then it must modify instead of add.
+ * Locally defined ports override those of the default policy.  When there are overlaps
+ * between local modifications and default policy, only the non-overlapped part of the policy
+ * is in effect.
+ * </p>
+ * <p>
+ * TODO: This API hides the complexity of the interactions between default policy and local modifications.
+ * Instead, it presents the union of both as a single mapping of ports to SELinux types.
+ * This means supporting things like punching holes in default policy ranges when only part of the range
+ * is overridden by local policy, and also choosing to "modify" or "add" a port based on whether is
+ * an exact match or partial overlap with default policy.
+ * </p>
+ * <p>
+ * TODO: Also, adjacent ports of the same SELinux type are automatically coalesced during list.
+ * </p>
  * Wraps functions of the <code>semanage port</code> commands.
  *
  * TODO: Log changes as INFO level
