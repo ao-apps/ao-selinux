@@ -2,12 +2,15 @@ package com.aoindustries.selinux;
 
 import com.aoindustries.io.IoUtils;
 import com.aoindustries.nio.charset.Charsets;
+import com.aoindustries.util.AoCollections;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -31,73 +34,256 @@ public class PortTest {
 	public PortTest() {
 	}
 
-	private String testDataSimpleSubset;
-	// TODO: Test that the overridden port 8008 is showing as ssh_type_t
-	private String testDataFullWithModified8008;
+	private static String testDataSimpleSubset;
+	private static String testDataLocalWithModified8008;
+	private static String testDataFullWithModified8008;
 
-	@Before
-	public void setUp() throws IOException {
+	@BeforeClass
+	public static void setUpClass() throws IOException {
 		testDataSimpleSubset = loadResource("semanage-port-noheading-list-simple-subset.txt");
+		testDataLocalWithModified8008 = loadResource("semanage-port-noheading-list-local-with-modified-8008.txt");
 		testDataFullWithModified8008 = loadResource("semanage-port-noheading-list-full-with-modified-8008.txt");
 	}
 	
-	@After
-	public void tearDown() {
+	@AfterClass
+	public static void tearDownClass() {
 		testDataSimpleSubset = null;
+		testDataLocalWithModified8008 = null;
 		testDataFullWithModified8008 = null;
 	}
-	
+
 	@Test
-	public void testParseList() throws IOException {
+	public void testFindOverlaps1() {
 		assertEquals(
-			Arrays.asList(
-				// afs3_callback_port_t           tcp      7001
-				new Port(
-					"afs3_callback_port_t",
-					Protocol.tcp,
-					Collections.singletonList(new PortRange(7001))
-				),
-				// afs3_callback_port_t           udp      7001
-				new Port(
-					"afs3_callback_port_t",
-					Protocol.udp,
-					Collections.singletonList(new PortRange(7001))
-				),
-				// afs_fs_port_t                  udp      7000, 7005
-				new Port(
-					"afs_fs_port_t",
-					Protocol.udp,
-					Arrays.asList(
-						new PortRange(7000),
-						new PortRange(7005)
-					)
-				),
-				// amanda_port_t                  tcp      10080-10083
-				new Port(
-					"amanda_port_t",
-					Protocol.tcp,
-					Collections.singletonList(new PortRange(10080, 10083))
-				),
-				// amanda_port_t                  udp      10080-10082
-				new Port(
-					"amanda_port_t",
-					Protocol.udp,
-					Collections.singletonList(new PortRange(10080, 10082))
-				),
-				// ssh_port_t                     tcp      22
-				new Port(
-					"ssh_port_t",
-					Protocol.tcp,
-					Collections.singletonList(new PortRange(22))
-				),
-				// zope_port_t                    tcp      8021
-				new Port(
-					"zope_port_t",
-					Protocol.tcp,
-					Collections.singletonList(new PortRange(8021))
+			AoCollections.emptySortedSet(),
+			Port.findOverlaps(
+				Arrays.asList(
+					new Port(Protocol.tcp, 10),
+					new Port(Protocol.udp, 10)
+				)
+			)
+		);
+	}
+
+	@Test
+	public void testFindOverlaps2() {
+		assertEquals(
+			AoCollections.singletonSortedSet(
+				new Port(Protocol.tcp, 10)
+			),
+			Port.findOverlaps(
+				Arrays.asList(
+					new Port(Protocol.tcp, 10),
+					new Port(Protocol.udp, 10),
+					new Port(Protocol.tcp, 10)
+				)
+			)
+		);
+	}
+
+	@Test
+	public void testFindOverlaps3() {
+		assertEquals(
+			new TreeSet<Port>(
+				Arrays.asList(
+					new Port(Protocol.tcp, 10),
+					new Port(Protocol.tcp, 1, 10)
 				)
 			),
-			Port.parseList(testDataSimpleSubset)
+			Port.findOverlaps(
+				Arrays.asList(
+					new Port(Protocol.tcp, 10),
+					new Port(Protocol.udp, 10),
+					new Port(Protocol.tcp, 1, 10)
+				)
+			)
+		);
+	}
+
+	@Test
+	public void testParseList() throws IOException {
+		SortedMap<Port, String> expected = new TreeMap<Port, String>();
+		// afs3_callback_port_t           tcp      7001
+		expected.put(new Port(Protocol.tcp, 7001), "afs3_callback_port_t");
+		// afs3_callback_port_t           udp      7001
+		expected.put(new Port(Protocol.udp, 7001), "afs3_callback_port_t");
+		// afs_fs_port_t                  udp      7000, 7005
+		expected.put(new Port(Protocol.udp, 7000), "afs_fs_port_t");
+		expected.put(new Port(Protocol.udp, 7005), "afs_fs_port_t");
+		// amanda_port_t                  tcp      10080-10083
+		expected.put(new Port(Protocol.tcp, 10080, 10083), "amanda_port_t");
+		// amanda_port_t                  udp      10080-10082
+		expected.put(new Port(Protocol.udp, 10080, 10082), "amanda_port_t");
+		// ssh_port_t                     tcp      22
+		expected.put(new Port(Protocol.tcp, 22), "ssh_port_t");
+		// zope_port_t                    tcp      8021
+		expected.put(new Port(Protocol.tcp, 8021), "zope_port_t");
+		assertEquals(
+			expected,
+			Port.parseList(testDataSimpleSubset, null)
+		);
+	}
+
+	@Test
+	public void testParseLocalPolicy() throws IOException {
+		SortedMap<Port, String> expected = new TreeMap<Port, String>();
+		// ssh_port_t                     tcp      8991, 8008
+		expected.put(new Port(Protocol.tcp, 8991), "ssh_port_t");
+		expected.put(new Port(Protocol.tcp, 8008), "ssh_port_t");
+		assertEquals(
+			expected,
+			Port.parseLocalPolicy(testDataLocalWithModified8008)
+		);
+	}
+
+	@Test
+	public void testParseDefaultPolicy() throws IOException {
+		SortedMap<Port, String> localPolicy = Port.parseLocalPolicy(testDataLocalWithModified8008);
+		SortedMap<Port, String> defaultPolicy = Port.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
+		// Make sure the default policy is used for port 8080
+		assertEquals(
+			"http_port_t",
+			defaultPolicy.get(new Port(Protocol.tcp, 8008))
+		);
+	}
+
+	public void testPortRangeMinFrom() throws IOException {
+		new Port(Protocol.tcp, 1, 10);
+	}
+
+	public void testPortRangeMaxFrom() throws IOException {
+		new Port(Protocol.tcp, 65535, 65535);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testPortRangeLowFrom() throws IOException {
+		new Port(Protocol.tcp, 0, 10);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testPortRangeHighFrom() throws IOException {
+		new Port(Protocol.tcp, 65536, 10);
+	}
+
+	public void testPortRangeMinTo() throws IOException {
+		new Port(Protocol.tcp, 1, 1);
+	}
+
+	public void testPortRangeMaxTo() throws IOException {
+		new Port(Protocol.tcp, 10, 65535);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testPortRangeLowTo() throws IOException {
+		new Port(Protocol.tcp, 10, 0);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testPortRangeHighTo() throws IOException {
+		new Port(Protocol.tcp, 10, 65536);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testPortRangeFromBiggerTo() throws IOException {
+		new Port(Protocol.tcp, 10, 1);
+	}
+
+	@Test
+	public void testOverlaps1() {
+		assertTrue(
+			new Port(Protocol.udp, 10).overlaps(
+				new Port(Protocol.udp, 10)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps2() {
+		assertFalse(
+			new Port(Protocol.tcp, 10).overlaps(
+				new Port(Protocol.udp, 10)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps3() {
+		assertTrue(
+			new Port(Protocol.tcp, 5, 10).overlaps(
+				new Port(Protocol.tcp, 10)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps4() {
+		assertTrue(
+			new Port(Protocol.tcp, 5, 10).overlaps(
+				new Port(Protocol.tcp, 5)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps5() {
+		assertFalse(
+			new Port(Protocol.tcp, 5).overlaps(
+				new Port(Protocol.tcp, 11)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps6() {
+		assertFalse(
+			new Port(Protocol.tcp, 5, 10).overlaps(
+				new Port(Protocol.tcp, 11)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps7() {
+		assertFalse(
+			new Port(Protocol.tcp, 5, 10).overlaps(
+				new Port(Protocol.tcp, 4)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps8() {
+		assertTrue(
+			new Port(Protocol.tcp, 5, 10).overlaps(
+				new Port(Protocol.tcp, 1, 5)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps9() {
+		assertTrue(
+			new Port(Protocol.tcp, 5, 10).overlaps(
+				new Port(Protocol.tcp, 10, 15)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps10() {
+		assertFalse(
+			new Port(Protocol.tcp, 5, 10).overlaps(
+				new Port(Protocol.tcp, 1, 4)
+			)
+		);
+	}
+
+	@Test
+	public void testOverlaps11() {
+		assertFalse(
+			new Port(Protocol.tcp, 5, 10).overlaps(
+				new Port(Protocol.tcp, 11, 15)
+			)
 		);
 	}
 }
