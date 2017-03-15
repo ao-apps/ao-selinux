@@ -32,15 +32,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Wraps functions of the <code>semanage port</code> commands.
  *
+ * TODO: Log changes as INFO level
+ * TODO: assert no port overlaps in list
+ * TODO: Add more tests
+ * TODO: Change instead of list of Port, but mapping if (Protocol,PortRange) -> SELinx type
+ *
  * @author  AO Industries, Inc.
  */
 public class Port {
+
+	private static final Logger logger = Logger.getLogger(Port.class.getName());
 
 	private static final Pattern listPattern = Pattern.compile("^(\\S+)\\s+(\\S+)\\s+(\\S.*)$");
 
@@ -97,6 +105,7 @@ public class Port {
 	 * Use {@link #configureTypeAndProtocol(java.lang.String, com.aoindustries.selinux.Protocol, java.util.Set)} if port coalescing is desired.
 	 */
 	public static void add(String type, Protocol protocol, PortRange portRange) throws IOException {
+		logger.info("Adding SELinux port: " + type + ", " + protocol + ", " + portRange);
 		SEManage.execSemanage(
 			"port", "-a",
 			"-t", type,
@@ -111,6 +120,7 @@ public class Port {
 	 * Use {@link #configureTypeAndProtocol(java.lang.String, com.aoindustries.selinux.Protocol, java.util.Set)} if port coalescing is desired.
 	 */
 	public static void delete(String type, Protocol protocol, PortRange portRange) throws IOException {
+		logger.info("Deleting SELinux port: " + type + ", " + protocol + ", " + portRange);
 		SEManage.execSemanage(
 			"port", "-d",
 			"-t", type,
@@ -161,6 +171,8 @@ public class Port {
 		if(!overlaps.isEmpty()) {
 			throw new IllegalArgumentException("Port ranges overlap: " + overlaps);
 		}
+		// TODO: See if can remove and/or coalesce with default ports
+		// TODO: Make sure doesn't overlap ports of other types on the same protocol, IllegalStateException if so
 		// Auto-coalesce any adjacent port ranges
 		SortedSet<PortRange> coalesced = PortRange.coalesce(portRanges);
 		// Avoid concurrent configuration of ports
