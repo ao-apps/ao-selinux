@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -38,6 +39,7 @@ import java.util.regex.Pattern;
 
 /**
  * A {@link Port} is a non-overlapping mapping from (protocol, port-range) to SELinux type.
+ * Wraps functions of the <code>semanage port</code> commands.
  * <p>
  * Ports that are part of the default policy may not be removed, but their
  * effective type may be modified with <code>semanage port -m ...</code>.
@@ -55,9 +57,19 @@ import java.util.regex.Pattern;
  * an exact match or partial overlap with default policy.
  * </p>
  * <p>
+ * TODO: Port mappings are across all IP addresses on a server.  Thus it is impossible, for example,
+ * to have Apache listening on port 12345/tcp on one IP address while SSH listens on the same port 12345/tcp
+ * on a different IP address, even though both of these are custom ports and would not seem to be in conflict
+ * since on different IP addresses.  The port configuration is careful to catch these conflicts instead of
+ * letting two services stomp on one another.
+ * </p>
+ * <p>
  * TODO: Also, adjacent ports of the same SELinux type are automatically coalesced during list.
  * </p>
- * Wraps functions of the <code>semanage port</code> commands.
+ * <p>
+ * TODO: Make a main method to this as command line interface, with a set of commands?
+ *       Overkill? commands -&gt; Java API -&gt; semanage -&gt; python API
+ * </p>
  *
  * TODO: Log changes as INFO level
  * TODO: assert no port overlaps in list
@@ -66,7 +78,7 @@ import java.util.regex.Pattern;
  *
  * @author  AO Industries, Inc.
  */
-public class Port {
+public class Port implements Comparable<Port> {
 
 	private static final Logger logger = Logger.getLogger(Port.class.getName());
 
@@ -106,7 +118,16 @@ public class Port {
 	 *
 	 * @return  the unmodifiable list of ports
 	 */
-	public static List<Port> list() throws IOException {
+	public static SortedMap<Port,String> getDefaultPolicy() throws IOException {
+		return parseList(SEManage.execSemanage("port", "--noheading", "--list").getStdout());
+	}
+
+	/**
+	 * Calls <code>semanage port --list</code>.
+	 *
+	 * @return  the unmodifiable list of ports
+	 */
+	public static SortedMap<Port,String> getPolicy() throws IOException {
 		return parseList(SEManage.execSemanage("port", "--noheading", "--list").getStdout());
 	}
 
@@ -115,7 +136,7 @@ public class Port {
 	 *
 	 * @return  the unmodifiable list of ports
 	 */
-	public static List<Port> localList() throws IOException {
+	public static SortedMap<Port,String> getLocalPolicy() throws IOException {
 		return parseList(SEManage.execSemanage("port", "--noheading", "--list", "--locallist").getStdout());
 	}
 
@@ -187,6 +208,9 @@ public class Port {
 	 * policy, but this current implementation will not do so.  Resolving this conflict is
 	 * beyond the scope of the current release.
 	 * </p>
+	 * TODO: Make sure to detect a configuration issue when two different SELinux types are trying to get the same port.  Don't simply bounce back-and-forth on whichever configured last.
+	 * TODO: Error if overlaps the existing non-default policy of another SELinux type.
+	 * TODO: Error if some other non-default policy has overridden a default policy that we need. (httpd detect if 80 overridden to sshd, for example)
 	 *
 	 * @throws  IllegalArgumentException  if any overlapping port numbers found
 	 */
@@ -237,23 +261,17 @@ public class Port {
 		}
 	}
 
-	private final String type;
 	private final Protocol protocol;
-	private final List<PortRange> portRanges;
+	private final PortRange portRange;
 
-	Port(
-		String type,
-		Protocol protocol,
-		List<PortRange> portRanges
-	) {
-		this.type = type;
+	Port(Protocol protocol, PortRange portRange) {
 		this.protocol = protocol;
-		this.portRanges = portRanges;
+		this.portRange = portRange;
 	}
 
 	@Override
 	public String toString() {
-		return "(" + type + ", " + protocol + ", " + portRanges + ")";
+		return portRange.toString() + '/' + protocol.toString();
 	}
 
 	@Override
@@ -261,29 +279,34 @@ public class Port {
 		if(!(obj instanceof Port)) return false;
 		Port other = (Port)obj;
 		return
-			type.equals(other.type)
-			&& protocol == other.protocol
-			&& portRanges.equals(other.portRanges)
+			protocol == other.protocol
+			&& portRange.equals(other.portRange)
 		;
 	}
 
 	@Override
 	public int hashCode() {
-		int hash = type.hashCode();
-		hash = hash * 31 + protocol.hashCode();
-		hash = hash * 31 + portRanges.hashCode();
-		return hash;
+		return
+			protocol.hashCode() * 31
+			+ portRange.hashCode()
+		;
 	}
 
-	public String getType() {
-		return type;
+	/**
+	 * Ordered by portRange, protocol
+	 */
+	@Override
+	public int compareTo(Port other) {
+		int diff = portRange.compareTo(other.portRange);
+		if(diff != 0) return diff;
+		return protocol.compareTo(other.protocol);
 	}
 
 	public Protocol getProtocol() {
 		return protocol;
 	}
 
-	public List<PortRange> getPortRanges() {
-		return portRanges;
+	public PortRange getPortRange() {
+		return portRange;
 	}
 }
