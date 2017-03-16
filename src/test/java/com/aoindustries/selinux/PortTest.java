@@ -162,8 +162,44 @@ public class PortTest {
 		SortedMap<Port, String> localPolicy = Port.parseLocalPolicy(testDataLocalWithModified8008);
 		SortedMap<Port, String> defaultPolicy = Port.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
 		SortedMap<Port, String> policy = Port.parsePolicy(localPolicy, defaultPolicy);
-		for(Map.Entry<Port, String> entry : policy.entrySet()) {
-			System.out.println(entry.getKey() + "=" + entry.getValue());
+		// Make sure the local policy is used for port 8080
+		assertEquals(
+			"ssh_port_t",
+			policy.get(new Port(Protocol.tcp, 8008))
+		);
+	}
+
+	@Test
+	public void testGetPolicyCoverFullPortRange() throws IOException {
+		SortedMap<Port, String> localPolicy = Port.parseLocalPolicy(testDataLocalWithModified8008);
+		SortedMap<Port, String> defaultPolicy = Port.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
+		SortedMap<Port, String> policy = Port.parsePolicy(localPolicy, defaultPolicy);
+		for(Protocol protocol : Protocol.values()) {
+			Port lastPort = null;
+			for(Port port : policy.keySet()) {
+				if(port.getProtocol() == protocol) {
+					if(lastPort == null) {
+						assertEquals(
+							"Must start on port 1",
+							1,
+							port.getFrom()
+						);
+					} else {
+						assertEquals(
+							"Must be one after last seen",
+							lastPort.getTo() + 1,
+							port.getFrom()
+						);
+					}
+					lastPort = port;
+				}
+			}
+			assertNotNull(lastPort);
+			assertEquals(
+				"Must end on port 65535",
+				65535,
+				lastPort.getTo()
+			);
 		}
 	}
 
