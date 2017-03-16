@@ -69,16 +69,11 @@ import java.util.regex.Pattern;
  * letting two services stomp on one another.
  * </p>
  * <p>
- * TODO: Also, adjacent ports of the same SELinux type are automatically coalesced during list.
- * </p>
- * <p>
  * TODO: Make a main method to this as command line interface, with a set of commands?
  *       Overkill? commands -&gt; Java API -&gt; semanage -&gt; python API
  * </p>
  *
- * TODO: assert no port overlaps in list
  * TODO: Add more tests
- * TODO: Change instead of list of Port, but mapping if (Protocol,PortRange) -> SELinx type (careful to handle local modifications overriding default policy)
  *
  * @author  AO Industries, Inc.
  */
@@ -186,36 +181,36 @@ public class Port implements Comparable<Port> {
 	 * <li>65, 80, 81-82, 84, 85-90, 91, 92-95 -&gt; 65, 80-82, 84-95</li>
 	 * </ul>
 	 *
-	 * @return the modifiable set of coalesced port ranges.
-	 *
-	 * @implNote This implementation is probably not the best regarding computational complexity, but is a simple implementation.
+	 * @return the modifiable map of coalesced port ranges.
 	 */
-	/* TODO
-	static SortedSet<Port> coalesce(Set<? extends Port> ports) {
-		assert assertNoOverlaps(ports);
-		SortedSet<Port> result = new TreeSet<Port>(ports);
-		// Repeat until nothing changed
-		MODIFIED_LOOP :
-		while(true) {
-			for(Port p1 : result) {
-				for(Port p2 : result) {
-					if(p1 != p2) {
-						Port coalesced = p1.coalesce(p2);
-						if(coalesced != null) {
-							result.remove(p1);
-							result.remove(p2);
-							result.add(coalesced);
-							continue MODIFIED_LOOP;
-						}
+	private static SortedMap<Port, String> coalesce(SortedMap<? extends Port, String> policy) {
+		assert assertNoOverlaps(policy);
+		SortedMap<Port, String> result = new TreeMap<Port, String>();
+		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
+		for(Protocol protocol : Protocol.values()) {
+			Port lastPort = null;
+			String lastType = null;
+			for(Map.Entry<? extends Port, String> entry : policy.entrySet()) {
+				Port port = entry.getKey();
+				if(protocol == port.getProtocol()) {
+					String type = entry.getValue();
+					if(
+						lastPort != null
+						&& (lastPort.getTo() + 1) == port.getFrom()
+						&& type.equals(lastType)
+					) {
+						result.remove(lastPort);
+						port = new Port(protocol, lastPort.getFrom(), port.getTo());
 					}
+					result.put(port, type);
+					lastPort = port;
+					lastType = type;
 				}
 			}
-			break;
 		}
 		assert assertNoOverlaps(result);
 		return result;
 	}
-	 */
 
 	/**
 	 * Parses the output of <code>semanage port --noheading --list</code>.
@@ -348,8 +343,13 @@ public class Port implements Comparable<Port> {
 	 * For example, it is not allowed to have both "10-20/tcp" and "15-25/tcp" in the default policy (overlap but not subset),
 	 * but is acceptable to have both "10-20/tcp" and "15-20/tcp".
 	 * </p>
+	 * <p>
+	 * To give more consistency: adjacent ports of the same SELinux type are automatically
+	 * coalesced during list.  For example, 80/tcp and 81/tcp are listed separately in
+	 * default policy, but are combined into 80-81/tcp for this view.
+	 * </p>
 	 *
-	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type, covering all ports 1 through 65535 in both tcp and udp.
+	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type, covering all ports 1 through 65535 in both tcp and udp, coalesced into minimum entries.
 	 */
 	public static SortedMap<Port,String> getPolicy() throws IOException {
 		SortedMap<Port,String> localPolicy;
@@ -395,7 +395,6 @@ public class Port implements Comparable<Port> {
 
 	/**
 	 * @see  #getPolicy()
-	 * // TODO: Add tests, such as making sure all ports 1-65535 covered both tcp and udp, and that all is coalesced
 	 */
 	static SortedMap<Port, String> parsePolicy(SortedMap<Port, String> localPolicy, SortedMap<Port, String> defaultPolicy) {
 		assert assertNoOverlaps(localPolicy);
@@ -482,9 +481,8 @@ public class Port implements Comparable<Port> {
 		assert assertNoOverlaps(policy);
 		// Finally, add local policy, removing or splitting any overlapping
 		// TODO
-		// Coalesce (Test for saphostctrl_port_t ports 1128 and 1129), test for any not coalesced
-		// TODO
-		// TODO: 64000-64010/udp=traceroute_port_t - check firewall traceroute port ranges we use
+		// Coalesce
+		policy = coalesce(policy);
 		assert assertNoOverlaps(policy);
 		if(logger.isLoggable(Level.FINEST)) {
 			logger.finest(dumpPolicy("Policy:", policy));
@@ -746,27 +744,6 @@ public class Port implements Comparable<Port> {
 			if(overlaps(other)) return true;
 		}
 		return false;
-	}
-	 */
-
-	/**
-	 * Combines this port range with the given port range if they are of the same protocol and adjacent.
-	 *
-	 * @return  The combined range or {@code null} if they are not adjacent.
-	 */
-	/* TODO
-	public Port coalesce(Port other) {
-		if(protocol == other.protocol) {
-			if(to == (other.from - 1)) {
-				// This is immediately before the other
-				return new Port(protocol, from, other.to);
-			}
-			if(from == (other.to + 1)) {
-				// This is immediately after the other
-				return new Port(protocol, other.from, to);
-			}
-		}
-		return null;
 	}
 	 */
 

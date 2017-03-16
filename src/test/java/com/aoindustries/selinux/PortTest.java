@@ -229,6 +229,10 @@ public class PortTest {
 			assertNotNull(lastPort);
 			assertNotNull(lastType);
 		}
+		assertEquals(
+			"saphostctrl_port_t",
+			policy.get(new Port(Protocol.tcp, 1128, 1129))
+		);
 	}
 
 	public void testPortRangeMinFrom() throws IOException {
