@@ -225,7 +225,7 @@ public class Port implements Comparable<Port> {
 				Matcher matcher = listPattern.matcher(line);
 				if(!matcher.find()) throw new IOException("Line not matched: " + line);
 				assert matcher.groupCount() == 3;
-				String type = matcher.group(1);
+				String type = matcher.group(1).intern();
 				Protocol protocol = Protocol.valueOf(matcher.group(2));
 				boolean foundPortRange = false;
 				StringTokenizer tokens = new StringTokenizer(matcher.group(3), ", ");
