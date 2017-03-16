@@ -13,9 +13,13 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 public class PortTest {
 	
@@ -257,44 +261,62 @@ public class PortTest {
 	}
 
 	public void testPortRangeMinFrom() throws IOException {
-		new Port(Protocol.tcp, 1, 10);
+		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
+			new Port(Protocol.tcp, 1, 10)
+		);
 	}
 
 	public void testPortRangeMaxFrom() throws IOException {
-		new Port(Protocol.tcp, 65535, 65535);
+		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
+			new Port(Protocol.tcp, 65535, 65535)
+		);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortRangeLowFrom() throws IOException {
-		new Port(Protocol.tcp, 0, 10);
+		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
+			new Port(Protocol.tcp, 0, 10)
+		);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortRangeHighFrom() throws IOException {
-		new Port(Protocol.tcp, 65536, 10);
+		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
+			new Port(Protocol.tcp, 65536, 10)
+		);
 	}
 
 	public void testPortRangeMinTo() throws IOException {
-		new Port(Protocol.tcp, 1, 1);
+		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
+			new Port(Protocol.tcp, 1, 1)
+		);
 	}
 
 	public void testPortRangeMaxTo() throws IOException {
-		new Port(Protocol.tcp, 10, 65535);
+		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
+			new Port(Protocol.tcp, 10, 65535)
+		);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortRangeLowTo() throws IOException {
-		new Port(Protocol.tcp, 10, 0);
+		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
+			new Port(Protocol.tcp, 10, 0)
+		);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortRangeHighTo() throws IOException {
-		new Port(Protocol.tcp, 10, 65536);
+		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
+			new Port(Protocol.tcp, 10, 65536)
+		);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortRangeFromBiggerTo() throws IOException {
-		new Port(Protocol.tcp, 10, 1);
+		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
+			new Port(Protocol.tcp, 10, 1)
+		);
 	}
 
 	@Test
