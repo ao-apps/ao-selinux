@@ -199,6 +199,19 @@ public class Port implements Comparable<Port> {
 	}
 
 	/**
+	 * Checks that there are not overlaps.
+	 *
+	 * @return  {@code true} if no overlaps found
+	 *
+	 * @throws AssertionError if any overlap found
+	 */
+	private static boolean assertNoOverlaps(SortedSet<? extends Port> ports) throws AssertionError {
+		SortedSet<Port> overlaps = findOverlaps(ports);
+		if(!overlaps.isEmpty()) throw new AssertionError("Ports overlap: " + ports);
+		return true;
+	}
+
+	/**
 	 * Combines any adjacent port numbers, within the same protocol, into fewer objects.
 	 * For example, the following would be combined:
 	 * <ul>
@@ -231,6 +244,37 @@ public class Port implements Comparable<Port> {
 					result.put(port, type);
 					lastPort = port;
 					lastType = type;
+				}
+			}
+		}
+		assert assertNoOverlaps(result);
+		return result;
+	}
+
+	/**
+	 * Coalesce for port sets.
+	 *
+	 * @see  #coalesce(java.util.SortedMap)
+	 *
+	 * @return the modifiable set of coalesced port ranges.
+	 */
+	private static SortedSet<Port> coalesce(SortedSet<? extends Port> ports) {
+		assert assertNoOverlaps(ports);
+		SortedSet<Port> result = new TreeSet<Port>();
+		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
+		for(Protocol protocol : Protocol.values()) {
+			Port lastPort = null;
+			for(Port port : ports) {
+				if(protocol == port.getProtocol()) {
+					if(
+						lastPort != null
+						&& (lastPort.getTo() + 1) == port.getFrom()
+					) {
+						result.remove(lastPort);
+						port = new Port(protocol, lastPort.getFrom(), port.getTo());
+					}
+					result.add(port);
+					lastPort = port;
 				}
 			}
 		}
@@ -633,13 +677,13 @@ public class Port implements Comparable<Port> {
 				}
 			}
 
+			// Coalesce the parameters
+			SortedSet<Port> coalesced = coalesce(new TreeSet<Port>(ports));
+
+			// TODO: From here
 			// Load default policy
 			SortedMap<Port, String> defaultPolicy = getDefaultPolicy(localPolicy);
 
-			// TODO: See if can remove and/or coalesce with default ports
-			// TODO: Make sure doesn't overlap ports of other types on the same protocol, IllegalStateException if so
-			// Auto-coalesce any adjacent port ranges
-			SortedSet<PortRange> coalesced = PortRange.coalesce(ports);
 			// Avoid concurrent configuration of ports
 			List<PortRange> existingPortRanges = filterByTypeAndProtocol(
 				list(),
