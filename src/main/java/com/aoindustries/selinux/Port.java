@@ -48,34 +48,24 @@ import java.util.regex.Pattern;
  * A {@link Port} is a non-overlapping mapping from (protocol, port-range) to SELinux type.
  * Wraps functions of the <code>semanage port</code> commands.
  * <p>
- * Ports that are part of the default policy may not be removed, but their
- * effective type may be modified with <code>semanage port -m ...</code>.
- * Ports may be added that overlap those of the default policy, but if they exactly
- * match the port range of the default policy, then it must modify instead of add.
- * Locally defined ports override those of the default policy.  When there are overlaps
- * between local modifications and default policy, only the non-overlapped part of the policy
- * is in effect.
- * </p>
- * <p>
- * TODO: This API hides the complexity of the interactions between default policy and local modifications.
+ * This API hides the complexity of the interactions between default policy and local modifications.
  * Instead, it presents the union of both as a single mapping of ports to SELinux types.
  * This means supporting things like punching holes in default policy ranges when only part of the range
  * is overridden by local policy, and also choosing to "modify" or "add" a port based on whether is
  * an exact match or partial overlap with default policy.
  * </p>
  * <p>
- * TODO: Port mappings are across all IP addresses on a server.  Thus it is impossible, for example,
+ * Port mappings are across all IP addresses on a server.  Thus it is impossible, for example,
  * to have Apache listening on port 12345/tcp on one IP address while SSH listens on the same port 12345/tcp
  * on a different IP address, even though both of these are custom ports and would not seem to be in conflict
- * since on different IP addresses.  The port configuration is careful to catch these conflicts instead of
- * letting two services stomp on one another.
+ * since on different IP addresses.  By detecting local policy conflicts,
+ * the {@link #configure(java.util.Set, java.lang.String) port configuration} catches these
+ * conflicts instead of letting two services stomp on one another.
  * </p>
  * <p>
  * TODO: Make a main method to this as command line interface, with a set of commands?
  *       Overkill? commands -&gt; Java API -&gt; semanage -&gt; python API
  * </p>
- *
- * TODO: Add more tests
  *
  * @author  AO Industries, Inc.
  */
@@ -127,7 +117,7 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @throws  IllegalStateException  if overlap found and set not modified.
 	 */
-	/*
+	/* TODO: Unused?
 	static void addCheckOverlap(Set<Port> ports, Port newPort) throws IllegalStateException {
 		// Look for overlap first
 		for(Port port : ports) {
@@ -484,44 +474,53 @@ public class Port implements Comparable<Port> {
 
 	/**
 	 * Calls <code>semanage port -a -t <i>type</i> -p <i>protocol</i> <i>port(s)</i></code>.
-	 *
-	 * Use {@link #configureTypeAndProtocol(java.lang.String, com.aoindustries.selinux.Protocol, java.util.Set)} if port coalescing is desired.
 	 */
-	/* TODO
-	public static void add(String type, Protocol protocol, PortRange portRange) throws IOException {
-		logger.info("Adding SELinux port: " + type + ", " + protocol + ", " + portRange);
+	private static void add(Port port, String type) throws IOException {
+		if(logger.isLoggable(Level.INFO)) {
+			logger.info("Adding SELinux port: " + port + "=" + type);
+		}
 		SEManage.execSemanage(
 			"port", "-a",
 			"-t", type,
-			"-p", protocol.toString(),
-			portRange.toString()
+			"-p", port.getProtocol().toString(),
+			port.getPortRange()
 		);
 	}
+
+	/**
+	 * Calls <code>semanage port -m -t <i>type</i> -p <i>protocol</i> <i>port(s)</i></code>.
+	 * Modify is used when we need to precisely overlap a default policy entry.
+	 * Overlapping, but not same exact from/to, use add.
 	 */
+	private static void modify(Port port, String type) throws IOException {
+		logger.info("Modifying SELinux port: " + port + "=" + type);
+		SEManage.execSemanage(
+			"port", "-m",
+			"-t", type,
+			"-p", port.getProtocol().toString(),
+			port.getPortRange()
+		);
+	}
 
 	/**
 	 * Calls <code>semanage port -d -t <i>type</i> -p <i>protocol</i> <i>port(s)</i></code>.
-	 *
-	 * Use {@link #configureTypeAndProtocol(java.lang.String, com.aoindustries.selinux.Protocol, java.util.Set)} if port coalescing is desired.
 	 */
-	/* TODO
-	public static void delete(String type, Protocol protocol, PortRange portRange) throws IOException {
-		logger.info("Deleting SELinux port: " + type + ", " + protocol + ", " + portRange);
+	private static void delete(Port port, String type) throws IOException {
+		logger.info("Deleting SELinux port: " + port + "=" + type);
 		SEManage.execSemanage(
 			"port", "-d",
 			"-t", type,
-			"-p", protocol.toString(),
-			portRange.toString()
+			"-p", port.getProtocol().toString(),
+			port.getPortRange()
 		);
 	}
-	 */
 
 	/**
 	 * Filters a list of ports by SELinux type.
 	 *
 	 * @return  the modifiable list of ports of the given type
 	 */
-	/*
+	/* TODO: Unused?
 	public static List<Port> filterByType(Iterable<? extends Port> ports, String type) {
 		List<Port> filtered = new ArrayList<Port>();
 		for(Port port : ports) {
@@ -536,7 +535,7 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @return  the modifiable list of port numbers of the given type and protocol
 	 */
-	/* TODO
+	/* TODO: Unused?
 	public static List<PortRange> filterByTypeAndProtocol(Iterable<? extends Port> ports, String type, Protocol protocol) {
 		List<PortRange> filtered = new ArrayList<PortRange>();
 		for(Port port : ports) {
@@ -550,31 +549,63 @@ public class Port implements Comparable<Port> {
 	 */
 
 	/**
-	 * Configures one SELinux type and protocol to have the given set of ports.
-	 * First any missing port ranges are added while removing any existing conflicting ports.
-	 * Then any extra port ranges are removed.
+	 * Configures one SELinux type to have the given set of ports.
+	 * This includes the ability to override default policy.
+	 * This is the core purpose of this API: Just tell it what you want it
+	 * it'll handle the details.
 	 * <p>
-	 * <code>selinux port -m ...</code> can be used to modify a port provided by the default
-	 * policy, but this current implementation will not do so.  Resolving this conflict is
-	 * beyond the scope of the current release.
+	 * TODO: There must not be any overlap in the provided port ranges.  Throws
+	 * IllegalArgumentException if detected.
 	 * </p>
-	 * TODO: Make sure to detect a configuration issue when two different SELinux types are trying to get the same port.  Don't simply bounce back-and-forth on whichever configured last.
-	 * TODO: Error if overlaps the existing non-default policy of another SELinux type.
-	 * TODO: Error if some other non-default policy has overridden a default policy that we need. (httpd detect if 80 overridden to sshd, for example)
+	 * <p>
+	 * TODO: The provided ports are automatically {@link #coalesce(java.util.SortedMap) coalesced}
+	 * into the minimum number of port ranges.  For example, if both ports <code>1234/tcp</code>
+	 * and <code>1235/tcp</code> are requested, a single local policy of <code>1234-1235/tcp</code>
+	 * is generated.
+	 * </p>
+	 * <p>
+	 * TODO: First checks for conflicts with any other local policy.
+	 * If the set of ports overlaps any local policy of a different type,
+	 * throws IllegalStateException and no changes made.
+	 * </p>
+	 * <p>
+	 * TODO: In the first modification pass, adds any entries that are missing.  However,
+	 * any conflicting local policy is removed as-needed to allow the addition
+	 * of the new entry.
+	 * </p>
+	 * <p>
+	 * TODO: While adding the local policy, there are two interactions with default policy
+	 * considered.  First, if the local policy is completely covered by a default policy
+	 * entry of the expected type, the local policy entry is not added.  Second, if
+	 * the local policy has the same exact port range as an existing policy entry (of
+	 * a different type), {@link #modify(com.aoindustries.selinux.Port, java.lang.String)}
+	 * will be performed instead of {@link #add(com.aoindustries.selinux.Port, java.lang.String)}
+	 * </p>
+	 * <p>
+	 * TODO: In the second modification pass, any remaining extra local policy entries
+	 * for the type are removed.
+	 * </p>
+	 * <p>
+	 * When default policy is not used for by this type, it is left intact
+	 * and not overridden to an {@link #defaultPolicyExtensions unreserved type}.
+	 * The security benefits of overriding unused default policy is limited.
+	 * Leaving the default policy serves two purposes: leaving a more predictable
+	 * system and allowing a different SELinux type to override the port(s).
+	 * </p>
 	 *
 	 * @throws  IllegalArgumentException  if any overlapping port numbers found
+	 * @throws  IllegalStateException  if detected conflict with other local policy
 	 */
-	/* TODO
-	public static void configureTypeAndProtocol(String type, Protocol protocol, Set<? extends PortRange> portRanges) throws IllegalArgumentException, IOException {
+	public static void configure(Set<? extends Port> ports, String type) throws IllegalArgumentException, IllegalStateException, IOException {
 		// There must not be any overlapping port ranges
-		SortedSet<PortRange> overlaps = PortRange.findOverlaps(portRanges);
+		SortedSet<PortRange> overlaps = findOverlaps(ports);
 		if(!overlaps.isEmpty()) {
 			throw new IllegalArgumentException("Port ranges overlap: " + overlaps);
 		}
 		// TODO: See if can remove and/or coalesce with default ports
 		// TODO: Make sure doesn't overlap ports of other types on the same protocol, IllegalStateException if so
 		// Auto-coalesce any adjacent port ranges
-		SortedSet<PortRange> coalesced = PortRange.coalesce(portRanges);
+		SortedSet<PortRange> coalesced = PortRange.coalesce(ports);
 		// Avoid concurrent configuration of ports
 		synchronized(SEManage.semanageLock) {
 			List<PortRange> existingPortRanges = filterByTypeAndProtocol(
@@ -611,7 +642,6 @@ public class Port implements Comparable<Port> {
 			}
 		}
 	}
-	 */
 
 	private final Protocol protocol;
 	private final int from;
@@ -634,16 +664,7 @@ public class Port implements Comparable<Port> {
 
 	@Override
 	public String toString() {
-		if(from == to) return Integer.toString(from) + '/' + protocol.toString();
-		else return Integer.toString(from) + '-' + Integer.toString(to) + '/' + protocol.toString();
-	}
-
-	/**
-	 * Gets a string representation of the port range, appropriate for passing to <code>semanage</code>.
-	 */
-	public String getPortRange() {
-		if(from == to) return Integer.toString(from);
-		else return Integer.toString(from) + '-' + Integer.toString(to);
+		return getPortRange() + '/' + protocol;
 	}
 
 	@Override
@@ -691,9 +712,17 @@ public class Port implements Comparable<Port> {
 	}
 
 	/**
+	 * Gets a string representation of the port range, appropriate for passing to <code>semanage</code>.
+	 */
+	public String getPortRange() {
+		if(from == to) return Integer.toString(from);
+		else return Integer.toString(from) + '-' + Integer.toString(to);
+	}
+
+	/**
 	 * Checks if this port range contains the given port.
 	 */
-	/* TODO
+	/* TODO: Unused?
 	public boolean hasPort(Protocol protocol, int port) {
 		return
 			protocol == this.protocol
@@ -706,7 +735,7 @@ public class Port implements Comparable<Port> {
 	/**
 	 * Checks if this port range has any of the given ports.
 	 */
-	/* TODO
+	/* TODO: Unused?
 	public boolean hasPort(Protocol protocol, Iterable<? extends Integer> ports) {
 		for(int port : ports) {
 			if(hasPort(protocol, port)) return true;
@@ -730,7 +759,7 @@ public class Port implements Comparable<Port> {
 	/**
 	 * Checks if this port overlaps any of the given port ranges.
 	 */
-	/* TODO
+	/* TODO: Unused?
 	public boolean overlaps(Iterable<? extends Port> ports) {
 		for(Port other : ports) {
 			if(overlaps(other)) return true;
@@ -742,9 +771,8 @@ public class Port implements Comparable<Port> {
 	/**
 	 * Checks if this port is a subrange of the other port.
 	 * If the same range, it is considered a subrange.
-	 *
-	 * TODO: Add tests
 	 */
+	/* TODO: Unused?
 	boolean isSubRangeOf(Port other) {
 		return
 			protocol == other.protocol
@@ -752,6 +780,7 @@ public class Port implements Comparable<Port> {
 			&& to <= other.to
 		;
 	}
+	 */
 
 	/**
 	 * Gets the part of this port range below the given port or {@code null} if none.
