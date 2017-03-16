@@ -232,6 +232,30 @@ public class PortTest {
 		);
 	}
 
+	@Test
+	public void testToString1() {
+		assertEquals(
+			"1-65535/udp",
+			new Port(Protocol.udp, 1, 65535).toString()
+		);
+	}
+
+	@Test
+	public void testToString2() {
+		assertEquals(
+			"167/tcp",
+			new Port(Protocol.tcp, 167).toString()
+		);
+	}
+
+	@Test
+	public void testToString3() {
+		assertEquals(
+			"67/udp",
+			new Port(Protocol.udp, 67, 67).toString()
+		);
+	}
+
 	public void testPortRangeMinFrom() throws IOException {
 		new Port(Protocol.tcp, 1, 10);
 	}
@@ -271,6 +295,30 @@ public class PortTest {
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortRangeFromBiggerTo() throws IOException {
 		new Port(Protocol.tcp, 10, 1);
+	}
+
+	@Test
+	public void testGetPortRange1() {
+		assertEquals(
+			"1-65535",
+			new Port(Protocol.udp, 1, 65535).getPortRange()
+		);
+	}
+
+	@Test
+	public void testGetPortRange2() {
+		assertEquals(
+			"167",
+			new Port(Protocol.tcp, 167).getPortRange()
+		);
+	}
+
+	@Test
+	public void testGetPortRange3() {
+		assertEquals(
+			"67",
+			new Port(Protocol.udp, 67, 67).getPortRange()
+		);
 	}
 
 	@Test
