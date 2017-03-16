@@ -32,6 +32,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -554,19 +556,13 @@ public class Port implements Comparable<Port> {
 	 * This is the core purpose of this API: Just tell it what you want it
 	 * it'll handle the details.
 	 * <p>
-	 * TODO: There must not be any overlap in the provided port ranges.  Throws
-	 * IllegalArgumentException if detected.
+	 * Before any changes are made, checks for conflicts with any other local policy.
 	 * </p>
 	 * <p>
 	 * TODO: The provided ports are automatically {@link #coalesce(java.util.SortedMap) coalesced}
 	 * into the minimum number of port ranges.  For example, if both ports <code>1234/tcp</code>
 	 * and <code>1235/tcp</code> are requested, a single local policy of <code>1234-1235/tcp</code>
 	 * is generated.
-	 * </p>
-	 * <p>
-	 * TODO: First checks for conflicts with any other local policy.
-	 * If the set of ports overlaps any local policy of a different type,
-	 * throws IllegalStateException and no changes made.
 	 * </p>
 	 * <p>
 	 * TODO: In the first modification pass, adds any entries that are missing.  However,
@@ -593,21 +589,58 @@ public class Port implements Comparable<Port> {
 	 * system and allowing a different SELinux type to override the port(s).
 	 * </p>
 	 *
+	 * @param  ports  The set of all ports that should be set to the given type.
+	 *                There must not be any overlap in the provided port ranges.
+	 *
+	 * @param  type  The SELinux type for the given set of ports.
+	 *
 	 * @throws  IllegalArgumentException  if any overlapping port numbers found
-	 * @throws  IllegalStateException  if detected conflict with other local policy
+	 * @throws  IllegalStateException  if detected overlap with local policy of a different type
 	 */
 	public static void configure(Set<? extends Port> ports, String type) throws IllegalArgumentException, IllegalStateException, IOException {
 		// There must not be any overlapping port ranges
-		SortedSet<PortRange> overlaps = findOverlaps(ports);
-		if(!overlaps.isEmpty()) {
-			throw new IllegalArgumentException("Port ranges overlap: " + overlaps);
+		{
+			SortedSet<Port> overlaps = findOverlaps(ports);
+			if(!overlaps.isEmpty()) {
+				throw new IllegalArgumentException("Ports overlap: " + overlaps);
+			}
 		}
-		// TODO: See if can remove and/or coalesce with default ports
-		// TODO: Make sure doesn't overlap ports of other types on the same protocol, IllegalStateException if so
-		// Auto-coalesce any adjacent port ranges
-		SortedSet<PortRange> coalesced = PortRange.coalesce(ports);
-		// Avoid concurrent configuration of ports
 		synchronized(SEManage.semanageLock) {
+			// Load local policy
+			SortedMap<Port, String> localPolicy = getLocalPolicy();
+
+			// Check for any conflicts with any other local policy
+			{
+				SortedMap<Port, String> conflicts = new TreeMap<Port, String>();
+				for(Port port : ports) {
+					int portTo = port.getTo();
+					for(Map.Entry<Port, String> localEntry : localPolicy.entrySet()) {
+						Port localPort = localEntry.getKey();
+						if(localPort.getFrom() > portTo) {
+							// Past port.to, end iteration
+							break;
+						}
+						if(port.overlaps(localPort)) {
+							String localType = localEntry.getValue();
+							if(!type.equals(localType)) {
+								conflicts.put(localPort, localType);
+							}
+						}
+					}
+				}
+				if(!conflicts.isEmpty()) {
+					throw new IllegalStateException("Ports (" + ports + ") of type " + type + " conflict with other local policy: " + conflicts);
+				}
+			}
+
+			// Load default policy
+			SortedMap<Port, String> defaultPolicy = getDefaultPolicy(localPolicy);
+
+			// TODO: See if can remove and/or coalesce with default ports
+			// TODO: Make sure doesn't overlap ports of other types on the same protocol, IllegalStateException if so
+			// Auto-coalesce any adjacent port ranges
+			SortedSet<PortRange> coalesced = PortRange.coalesce(ports);
+			// Avoid concurrent configuration of ports
 			List<PortRange> existingPortRanges = filterByTypeAndProtocol(
 				list(),
 				type,
@@ -687,7 +720,11 @@ public class Port implements Comparable<Port> {
 	}
 
 	/**
-	 * Ordered by from, to, protocol
+	 * Ordered by from, to, protocol.
+	 * The fact that is ordered by "from" is used to break loops, this ordering
+	 * must not be changed without adjusting other code.
+	 *
+	 * TODO: Test this ordering by "from" since other code makes this assumption?
 	 */
 	@Override
 	public int compareTo(Port other) {
