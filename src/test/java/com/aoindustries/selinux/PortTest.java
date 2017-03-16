@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -134,6 +135,14 @@ public class PortTest {
 		assertEquals(
 			expected,
 			Port.parseLocalPolicy(testDataLocalWithModified8008)
+		);
+	}
+
+	@Test
+	public void testParseLocalPolicyNoOverlap() throws IOException {
+		assertEquals(
+			AoCollections.emptySortedSet(),
+			Port.findOverlaps(Port.parseLocalPolicy(testDataLocalWithModified8008).keySet())
 		);
 	}
 
