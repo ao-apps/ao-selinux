@@ -91,6 +91,8 @@ public class Port implements Comparable<Port> {
 
 	private static final Pattern listPattern = Pattern.compile("^(\\S+)\\s+(\\S+)\\s+(\\S.*)$");
 
+	private static final String EOL = System.getProperty("line.separator");
+
 	/**
 	 * Adds a port to a set of ports while checking for overlapping already in set.
 	 *
@@ -130,7 +132,11 @@ public class Port implements Comparable<Port> {
 	 */
 	private static <T extends Appendable> T dumpPolicy(SortedMap<? extends Port, String> policy, T out) throws IOException {
 		for(Map.Entry<? extends Port, String> entry : policy.entrySet()) {
-			out.append(entry.getKey().toString()).append('=').append(entry.getValue());
+			out
+				.append(entry.getKey().toString())
+				.append('=')
+				.append(entry.getValue())
+				.append(EOL);
 		}
 		return out;
 	}
@@ -138,9 +144,14 @@ public class Port implements Comparable<Port> {
 	/**
 	 * Gets a full line-by-line dump of the policy.
 	 */
-	private static String dumpPolicy(SortedMap<? extends Port, String> policy) {
+	private static String dumpPolicy(String firstLine, SortedMap<? extends Port, String> policy) {
 		try {
-			return dumpPolicy(policy, new StringBuilder()).toString();
+			return dumpPolicy(
+				policy,
+				new StringBuilder()
+					.append(firstLine)
+					.append(EOL)
+			).toString();
 		} catch(IOException e) {
 			AssertionError ae = new AssertionError("Should not happen on StringBuilder");
 			ae.initCause(e);
@@ -159,7 +170,7 @@ public class Port implements Comparable<Port> {
 		SortedSet<Port> overlaps = findOverlaps(policy.keySet());
 		if(!overlaps.isEmpty()) {
 			if(logger.isLoggable(Level.FINE)) {
-				logger.fine(dumpPolicy(policy));
+				logger.fine(dumpPolicy("Policy with overlapping ports: " + overlaps, policy));
 			}
 			throw new AssertionError("Ports overlap: " + overlaps);
 		}
@@ -279,6 +290,9 @@ public class Port implements Comparable<Port> {
 	 */
 	static SortedMap<Port,String> parseLocalPolicy(String stdout) throws IOException {
 		SortedMap<Port,String> localPolicy = parseList(stdout, null);
+		if(logger.isLoggable(Level.FINEST)) {
+			logger.finest(dumpPolicy("Local Policy:", localPolicy));
+		}
 		assert assertNoOverlaps(localPolicy);
 		return localPolicy;
 	}
@@ -309,7 +323,11 @@ public class Port implements Comparable<Port> {
 	 */
 	static SortedMap<Port,String> parseDefaultPolicy(String stdout, SortedMap<Port,String> localPolicy) throws IOException {
 		assert assertNoOverlaps(localPolicy);
-		return parseList(stdout, localPolicy);
+		SortedMap<Port, String> defaultPolicy = parseList(stdout, localPolicy);
+		if(logger.isLoggable(Level.FINEST)) {
+			logger.finest(dumpPolicy("Default Policy:", defaultPolicy));
+		}
+		return defaultPolicy;
 	}
 
 	/**
@@ -468,6 +486,9 @@ public class Port implements Comparable<Port> {
 		// TODO
 		// TODO: 64000-64010/udp=traceroute_port_t - check firewall traceroute port ranges we use
 		assert assertNoOverlaps(policy);
+		if(logger.isLoggable(Level.FINEST)) {
+			logger.finest(dumpPolicy("Policy:", policy));
+		}
 		return policy;
 	}
 
