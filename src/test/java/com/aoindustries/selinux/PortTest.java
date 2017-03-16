@@ -203,6 +203,34 @@ public class PortTest {
 		}
 	}
 
+	@Test
+	public void testGetPolicyCoalesced() throws IOException {
+		SortedMap<Port, String> localPolicy = Port.parseLocalPolicy(testDataLocalWithModified8008);
+		SortedMap<Port, String> defaultPolicy = Port.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
+		SortedMap<Port, String> policy = Port.parsePolicy(localPolicy, defaultPolicy);
+		for(Protocol protocol : Protocol.values()) {
+			Port lastPort = null;
+			String lastType = null;
+			for(Map.Entry<Port, String> entry: policy.entrySet()) {
+				Port port = entry.getKey();
+				if(port.getProtocol() == protocol) {
+					String type = entry.getValue();
+					if(lastPort != null) {
+						assertNotEquals(
+							"Adjacent ports must be of different types when properly coalesced (" + lastPort +", " + port + ")",
+							lastType,
+							type
+						);
+					}
+					lastPort = port;
+					lastType = type;
+				}
+			}
+			assertNotNull(lastPort);
+			assertNotNull(lastType);
+		}
+	}
+
 	public void testPortRangeMinFrom() throws IOException {
 		new Port(Protocol.tcp, 1, 10);
 	}
