@@ -37,6 +37,7 @@ import java.util.SortedSet;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -125,6 +126,47 @@ public class Port implements Comparable<Port> {
 	}
 
 	/**
+	 * Gets a full line-by-line dump of the policy.
+	 */
+	private static <T extends Appendable> T dumpPolicy(SortedMap<? extends Port, String> policy, T out) throws IOException {
+		for(Map.Entry<? extends Port, String> entry : policy.entrySet()) {
+			out.append(entry.getKey().toString()).append('=').append(entry.getValue());
+		}
+		return out;
+	}
+
+	/**
+	 * Gets a full line-by-line dump of the policy.
+	 */
+	private static String dumpPolicy(SortedMap<? extends Port, String> policy) {
+		try {
+			return dumpPolicy(policy, new StringBuilder()).toString();
+		} catch(IOException e) {
+			AssertionError ae = new AssertionError("Should not happen on StringBuilder");
+			ae.initCause(e);
+			throw ae;
+		}
+	}
+
+	/**
+	 * Checks that there are not overlaps.
+	 *
+	 * @return  {@code true} if no overlaps found
+	 *
+	 * @throws AssertionError if any overlap found
+	 */
+	private static boolean assertNoOverlaps(SortedMap<? extends Port, String> policy) throws AssertionError {
+		SortedSet<Port> overlaps = findOverlaps(policy.keySet());
+		if(!overlaps.isEmpty()) {
+			if(logger.isLoggable(Level.FINE)) {
+				logger.fine(dumpPolicy(policy));
+			}
+			throw new AssertionError("Ports overlap: " + overlaps);
+		}
+		return true;
+	}
+
+	/**
 	 * Combines any adjacent port numbers, within the same protocol, into fewer objects.
 	 * For example, the following would be combined:
 	 * <ul>
@@ -139,7 +181,7 @@ public class Port implements Comparable<Port> {
 	 */
 	/* TODO
 	static SortedSet<Port> coalesce(Set<? extends Port> ports) {
-		assert findOverlaps(ports).isEmpty();
+		assert assertNoOverlaps(ports);
 		SortedSet<Port> result = new TreeSet<Port>(ports);
 		// Repeat until nothing changed
 		MODIFIED_LOOP :
@@ -159,7 +201,7 @@ public class Port implements Comparable<Port> {
 			}
 			break;
 		}
-		assert findOverlaps(result).isEmpty();
+		assert assertNoOverlaps(result);
 		return result;
 	}
 	 */
@@ -237,10 +279,7 @@ public class Port implements Comparable<Port> {
 	 */
 	static SortedMap<Port,String> parseLocalPolicy(String stdout) throws IOException {
 		SortedMap<Port,String> localPolicy = parseList(stdout, null);
-		Set<Port> overlaps = findOverlaps(localPolicy.keySet());
-		if(!overlaps.isEmpty()) {
-			throw new AssertionError("Ports overlap: " + overlaps);
-		}
+		assert assertNoOverlaps(localPolicy);
 		return localPolicy;
 	}
 
@@ -269,7 +308,7 @@ public class Port implements Comparable<Port> {
 	 * @return  the unmodifiable mapping of possibly overlapping port ranges to SELinux type.
 	 */
 	static SortedMap<Port,String> parseDefaultPolicy(String stdout, SortedMap<Port,String> localPolicy) throws IOException {
-		assert findOverlaps(localPolicy.keySet()).isEmpty();
+		assert assertNoOverlaps(localPolicy);
 		return parseList(stdout, localPolicy);
 	}
 
@@ -332,16 +371,16 @@ public class Port implements Comparable<Port> {
 		// tcp/udp: 61001-65535: unreserved_port_t
 		newMap.put(new Port(Protocol.tcp, 61001, 65535), "unreserved_port_t");
 		newMap.put(new Port(Protocol.udp, 61001, 65535), "unreserved_port_t");
-		assert findOverlaps(newMap.keySet()).isEmpty();
+		assert assertNoOverlaps(newMap);
 		defaultPolicyExtensions = Collections.unmodifiableSortedMap(newMap);
 	}
 
 	/**
 	 * @see  #getPolicy()
-	 * // TODO: Add tests, such as making sure all ports 1-65535 covered both tcp and udp
+	 * // TODO: Add tests, such as making sure all ports 1-65535 covered both tcp and udp, and that all is coalesced
 	 */
 	static SortedMap<Port, String> parsePolicy(SortedMap<Port, String> localPolicy, SortedMap<Port, String> defaultPolicy) {
-		assert findOverlaps(localPolicy.keySet()).isEmpty();
+		assert assertNoOverlaps(localPolicy);
 		SortedMap<Port, String> policy = new TreeMap<Port, String>();
 		// Add defaults to cover all ports 1 through 65535, if not found in provided default policy
 		for(Map.Entry<Port, String> extensionEntry : defaultPolicyExtensions.entrySet()) {
@@ -350,17 +389,7 @@ public class Port implements Comparable<Port> {
 				policy.put(port, extensionEntry.getValue());
 			}
 		}
-		boolean assertEnabled = false;
-		assert assertEnabled = true; // Intentional side-effect of assertions
-		if(assertEnabled) {
-			Set<Port> overlaps = findOverlaps(policy.keySet());
-			if(!overlaps.isEmpty()) {
-				for(Map.Entry<Port, String> entry : policy.entrySet()) {
-					System.err.println(entry.getKey() + "=" + entry.getValue());
-				}
-				throw new AssertionError("Ports overlap: " + overlaps);
-			}
-		}
+		assert assertNoOverlaps(policy);
 		// Will add default policy in the order from largest ranges to smallest so that
 		// splitting only happens to entries already in the set (one-way for simpler code).
 		SortedMap<Port, String> sortedDefaultPolicy = new TreeMap<Port, String>(
@@ -421,6 +450,10 @@ public class Port implements Comparable<Port> {
 					if(lowerSplit != null && policy.put(lowerSplit, bigType) != null) throw new AssertionError();
 					Port upperSplit = bigPort.splitAbove(smallPort.getTo());
 					if(upperSplit != null && policy.put(upperSplit, bigType) != null) throw new AssertionError();
+					if(upperSplit == null && lowerSplit == null && logger.isLoggable(Level.FINEST)) {
+						logger.log(Level.FINEST, "Complete overlap: " + existingPort + "=" + existingType
+									+ " and " + defaultPort + "=" + defaultType);
+					}
 					// Existing entries may be completed replaced now: if(lowerSplit == null && upperSplit == null) throw new AssertionError();
 					added = true;
 					break;
@@ -428,38 +461,13 @@ public class Port implements Comparable<Port> {
 			}
 			if(!added) policy.put(defaultPort, defaultType);
 		}
-		if(assertEnabled) {
-			Set<Port> overlaps = findOverlaps(policy.keySet());
-			if(!overlaps.isEmpty()) {
-				for(Map.Entry<Port, String> entry : policy.entrySet()) {
-					System.err.println(entry.getKey() + "=" + entry.getValue());
-				}
-				throw new AssertionError("Ports overlap: " + overlaps);
-			}
-		}
+		assert assertNoOverlaps(policy);
 		// Finally, add local policy, removing or splitting any overlapping
 		// TODO
 		// Coalesce (Test for saphostctrl_port_t ports 1128 and 1129), test for any not coalesced
 		// TODO
 		// TODO: 64000-64010/udp=traceroute_port_t - check firewall traceroute port ranges we use
-		if(assertEnabled) {
-			Set<Port> overlaps = findOverlaps(policy.keySet());
-			if(!overlaps.isEmpty()) {
-				for(Map.Entry<Port, String> entry : policy.entrySet()) {
-					System.err.println(entry.getKey() + "=" + entry.getValue());
-				}
-				throw new AssertionError("Ports overlap: " + overlaps);
-			}
-		}
-		// Make sure no overlaps in the resulting policy
-		// TODO: Move this to a shared check method
-		Set<Port> overlaps = findOverlaps(policy.keySet());
-		if(!overlaps.isEmpty()) {
-			for(Map.Entry<Port, String> entry : policy.entrySet()) {
-				System.err.println(entry.getKey() + "=" + entry.getValue());
-			}
-			throw new AssertionError("Ports overlap: " + overlaps);
-		}
+		assert assertNoOverlaps(policy);
 		return policy;
 	}
 
@@ -757,22 +765,18 @@ public class Port implements Comparable<Port> {
 
 	/**
 	 * Gets the part of this port range below the given port or {@code null} if none.
-	 *
-	 * TODO: Add tests
 	 */
 	Port splitBelow(int below) {
-		int newTo = Math.min(to, below-1);
+		int newTo = Math.min(to, below - 1);
 		if(newTo >= from) return new Port(protocol, from, newTo);
 		else return null;
 	}
 
 	/**
 	 * Gets the part of this port range above the given port or {@code null} if none.
-	 *
-	 * TODO: Add tests
 	 */
 	Port splitAbove(int above) {
-		int newFrom = Math.max(from, above+1);
+		int newFrom = Math.max(from, above + 1);
 		if(newFrom <= to) return new Port(protocol, newFrom, to);
 		else return null;
 	}
