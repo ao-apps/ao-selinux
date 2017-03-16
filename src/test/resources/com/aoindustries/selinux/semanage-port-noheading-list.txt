@@ -1,7 +1,0 @@
-afs3_callback_port_t           tcp      7001
-afs3_callback_port_t           udp      7001
-afs_fs_port_t                  udp      7000, 7005
-amanda_port_t                  tcp      10080-10083
-amanda_port_t                  udp      10080-10082
-ssh_port_t                     tcp      22
-zope_port_t                    tcp      8021
