@@ -558,8 +558,8 @@ public class Port implements Comparable<Port> {
 	/**
 	 * Configures one SELinux type to have the given set of ports.
 	 * This includes the ability to override default policy.
-	 * This is the core purpose of this API: Just tell it what you want it
-	 * it'll handle the details.
+	 * This is the core purpose of this API: Just tell it what you want and
+	 * it will handle the details.
 	 * <p>
 	 * Before any changes are made, checks for conflicts with any other local policy.
 	 * </p>
@@ -584,8 +584,8 @@ public class Port implements Comparable<Port> {
 	 * </p>
 	 * <p>
 	 * In the second modification pass, any remaining extra local policy entries
-	 * for the type are removed, thus freeing these ports for any other types to
-	 * use for local policy.
+	 * for the type are removed, thus freeing these ports for use in the local policy
+	 * of other SELinux types.
 	 * </p>
 	 * <p>
 	 * When default policy is not used by this type, it is left intact
