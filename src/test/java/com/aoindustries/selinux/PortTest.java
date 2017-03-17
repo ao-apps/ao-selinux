@@ -320,6 +320,47 @@ public class PortTest {
 	}
 
 	@Test
+	public void testCompareTo1() {
+		assertTrue(
+			new Port(Protocol.tcp, 1).compareTo(
+				new Port(Protocol.tcp, 1)
+			)
+			== 0
+		);
+	}
+
+	@Test
+	public void testCompareTo2() {
+		assertTrue(
+			new Port(Protocol.tcp, 1).compareTo(
+				new Port(Protocol.tcp, 1, 2)
+			)
+			< 0
+		);
+	}
+
+	@Test
+	public void testCompareTo3() {
+		assertTrue(
+			new Port(Protocol.tcp, 1).compareTo(
+				new Port(Protocol.udp, 1)
+			)
+			< 0
+		);
+	}
+
+	@Test
+	public void testCompareTo4() {
+		assertTrue(
+			"Detected from sorting before to",
+			new Port(Protocol.tcp, 10, 15).compareTo(
+				new Port(Protocol.tcp, 11, 14)
+			)
+			< 0
+		);
+	}
+
+	@Test
 	public void testGetPortRange1() {
 		assertEquals(
 			"1-65535",

@@ -786,8 +786,6 @@ public class Port implements Comparable<Port> {
 	 * Ordered by from, to, protocol.
 	 * The fact that is ordered by "from" is used to break loops, this ordering
 	 * must not be changed without adjusting other code.
-	 *
-	 * TODO: Test this ordering by "from" since other code makes this assumption?
 	 */
 	@Override
 	public int compareTo(Port other) {
