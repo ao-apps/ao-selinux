@@ -695,45 +695,47 @@ public class Port implements Comparable<Port> {
 			// Find all local policy for this type
 			SortedSet<Port> existingPorts = filterByType(localPolicy, type);
 
-			// Load default policy
-			SortedMap<Port, String> defaultPolicy = getDefaultPolicy(localPolicy);
-
 			// Track if modified any policy
 			boolean modified = false;
 
-			// Add any missing ports that are not part of the default policy
-			for(Port port : coalesced) {
-				String defaultType = defaultPolicy.get(port);
-				if(
-					// Only add local policy when does not match default policy exactly (both range and type)
-					!type.equals(defaultType)
-					// Also check if already part of local policy
-					&& !existingPorts.contains(port)
-				) {
-					// Remove any extra ports that overlap the port range we're adding.
-					{
-						Iterator<Port> existingIter = existingPorts.iterator();
-						while(existingIter.hasNext()) {
-							Port existing = existingIter.next();
-							if(
-								!coalesced.contains(existing)
-								&& existing.overlaps(port)
-							) {
-								// Remove overlapping extra port
-								delete(existing, type);
-								existingIter.remove();
+			if(!coalesced.isEmpty()) {
+				// Load default policy
+				SortedMap<Port, String> defaultPolicy = getDefaultPolicy(localPolicy);
+
+				// Add any missing ports that are not part of the default policy
+				for(Port port : coalesced) {
+					String defaultType = defaultPolicy.get(port);
+					if(
+						// Only add local policy when does not match default policy exactly (both range and type)
+						!type.equals(defaultType)
+						// Also check if already part of local policy
+						&& !existingPorts.contains(port)
+					) {
+						// Remove any extra ports that overlap the port range we're adding.
+						{
+							Iterator<Port> existingIter = existingPorts.iterator();
+							while(existingIter.hasNext()) {
+								Port existing = existingIter.next();
+								if(
+									!coalesced.contains(existing)
+									&& existing.overlaps(port)
+								) {
+									// Remove overlapping extra port
+									delete(existing, type);
+									existingIter.remove();
+								}
 							}
 						}
+						if(defaultType != null) {
+							// When precisely overlaps default policy of a different type, have to modify into local policy
+							assert !type.equals(defaultType);
+							modify(port, type);
+						} else {
+							// Does not align precisely with any default policy, have to add into local policy
+							add(port, type);
+						}
+						modified = true;
 					}
-					if(defaultType != null) {
-						// When precisely overlaps default policy of a different type, have to modify into local policy
-						assert !type.equals(defaultType);
-						modify(port, type);
-					} else {
-						// Does not align precisely with any default policy, have to add into local policy
-						add(port, type);
-					}
-					modified = true;
 				}
 			}
 			// Remove any remaining extra ports (those that do not overlap the expected ports)
