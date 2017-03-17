@@ -32,7 +32,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		title="@{documented.name}"
 		description="@{documented.description}"
 		datePublished="2017-03-12T18:31:26-0500"
-		dateModified="2017-03-14T23:16:26-0500"
+		dateModified="2017-03-16T22:59:43-0500"
 	>
 		<core:child page="changelog.jspx" />
 		<core:child page="apidocs/index.jspx" />
@@ -47,6 +47,8 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 						<li>Easily reconfigure all ports for a given SELinux type.</li>
 						<li>Automatically coalesces adjacent port ranges.</li>
 						<li>Presents a single cohesive view of all ports, hiding the nuance and complexity of the interactions between default policy and local policy.</li>
+						<li>Supports seamlessly overriding default policy.</li>
+						<li>Detects conflicts in local policy between different SELinux types.</li>
 					</ul>
 				</li>
 				<li>Small footprint, minimal dependencies - not part of a big monolithic package.</li>

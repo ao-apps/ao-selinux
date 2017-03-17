@@ -7,6 +7,8 @@ Java API for managing Security-Enhanced Linux (SELinux).
     * Easily reconfigure all ports for a given SELinux type.
     * Automatically coalesces adjacent port ranges.
     * Presents a single cohesive view of all ports, hiding the nuance and complexity of the interactions between default policy and local policy.
+    * Supports seamlessly overriding default policy.
+    * Detects conflicts in local policy between different SELinux types.
 * Small footprint, minimal dependencies - not part of a big monolithic package.
 
 ## Motivation
