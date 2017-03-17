@@ -562,19 +562,19 @@ public class Port implements Comparable<Port> {
 	}
 
 	/**
-	 * Filters a list of ports by SELinux type.
+	 * Filters ports by SELinux type.
 	 *
-	 * @return  the modifiable list of ports of the given type
+	 * @return  the modifiable sorted set of ports of the given type
 	 */
-	/* TODO: Unused?
-	public static List<Port> filterByType(Iterable<? extends Port> ports, String type) {
-		List<Port> filtered = new ArrayList<Port>();
-		for(Port port : ports) {
-			if(port.getType().equals(type)) filtered.add(port);
+	public static SortedSet<Port> filterByType(Map<? extends Port, String> policy, String type) {
+		SortedSet<Port> filtered = new TreeSet<Port>();
+		for(Map.Entry<? extends Port, String> entry : policy.entrySet()) {
+			if(entry.getValue().equals(type)) {
+				if(!filtered.add(entry.getKey())) throw new AssertionError();
+			}
 		}
 		return filtered;
 	}
-	 */
 
 	/**
 	 * Filters a list of ports by SELinux type and protocol.
@@ -603,35 +603,45 @@ public class Port implements Comparable<Port> {
 	 * Before any changes are made, checks for conflicts with any other local policy.
 	 * </p>
 	 * <p>
-	 * TODO: The provided ports are automatically {@link #coalesce(java.util.SortedMap) coalesced}
+	 * The provided ports are automatically {@link #coalesce(java.util.SortedMap) coalesced}
 	 * into the minimum number of port ranges.  For example, if both ports <code>1234/tcp</code>
 	 * and <code>1235/tcp</code> are requested, a single local policy of <code>1234-1235/tcp</code>
 	 * is generated.
 	 * </p>
 	 * <p>
-	 * TODO: In the first modification pass, adds any entries that are missing.  However,
-	 * any conflicting local policy is removed as-needed to allow the addition
-	 * of the new entry.
+	 * In the first modification pass, adds any entries that are missing and not
+	 * part of the default policy.  However, any conflicting local policy is
+	 * removed as-needed to allow the addition of the new entry.
 	 * </p>
 	 * <p>
-	 * TODO: While adding the local policy, there are two interactions with default policy
-	 * considered.  First, if the local policy is completely covered by a default policy
+	 * While adding the local policy, there are two interactions with default policy
+	 * considered.  First, if the local policy precisely matches a default policy
 	 * entry of the expected type, the local policy entry is not added.  Second, if
-	 * the local policy has the same exact port range as an existing policy entry (of
+	 * the local policy has the same exact port range as a default policy entry (of
 	 * a different type), {@link #modify(com.aoindustries.selinux.Port, java.lang.String)}
-	 * will be performed instead of {@link #add(com.aoindustries.selinux.Port, java.lang.String)}
+	 * will be performed instead of {@link #add(com.aoindustries.selinux.Port, java.lang.String)}.
 	 * </p>
 	 * <p>
-	 * TODO: In the second modification pass, any remaining extra local policy entries
-	 * for the type are removed.
+	 * In the second modification pass, any remaining extra local policy entries
+	 * for the type are removed, thus freeing these ports for any other types to
+	 * use for local policy.
 	 * </p>
 	 * <p>
-	 * When default policy is not used for by this type, it is left intact
+	 * When default policy is not used by this type, it is left intact
 	 * and not overridden to an {@link #defaultPolicyExtensions unreserved type}.
 	 * The security benefits of overriding unused default policy is limited.
 	 * Leaving the default policy serves two purposes: leaving a more predictable
-	 * system and allowing a different SELinux type to override the port(s).
+	 * configuration and allowing a different SELinux type to override the port(s)
+	 * with their own local policy.
 	 * </p>
+	 *
+	 * @implNote  We could punch holes in local policy to avoid overlapping default policy,
+	 *            but we see no conflict with local policy overlapping default policy.
+	 *            As an example, if SSH were listening on both ports 22/tcp and 23/tcp,
+	 *            the current implementation will create a single local policy entry
+	 *            of 22-23/tcp, which overlaps and is partially redundant with the default
+	 *            policy of 22/tcp.  One possible benefit of this more complete local
+	 *            policy is more thorough detection of local policy conflicts.
 	 *
 	 * @param  ports  The set of all ports that should be set to the given type.
 	 *                There must not be any overlap in the provided port ranges.
@@ -680,41 +690,50 @@ public class Port implements Comparable<Port> {
 			// Coalesce the parameters
 			SortedSet<Port> coalesced = coalesce(new TreeSet<Port>(ports));
 
-			// TODO: From here
+			// Find all local policy for this type
+			SortedSet<Port> existingPorts = filterByType(localPolicy, type);
+
 			// Load default policy
 			SortedMap<Port, String> defaultPolicy = getDefaultPolicy(localPolicy);
 
-			// Avoid concurrent configuration of ports
-			List<PortRange> existingPortRanges = filterByTypeAndProtocol(
-				list(),
-				type,
-				protocol
-			);
-			// Add any missing ports
-			for(PortRange portRange : coalesced) {
-				if(!existingPortRanges.contains(portRange)) {
+			// Add any missing ports that are not part of the default policy
+			for(Port port : coalesced) {
+				String defaultType = defaultPolicy.get(port);
+				if(
+					// Only add local policy when does not match default policy exactly (both range and type)
+					!type.equals(defaultType)
+					// Also check if already part of local policy
+					&& !existingPorts.contains(port)
+				) {
 					// Remove any extra ports that overlap the port range we're adding.
 					{
-						Iterator<PortRange> existingIter = existingPortRanges.iterator();
+						Iterator<Port> existingIter = existingPorts.iterator();
 						while(existingIter.hasNext()) {
-							PortRange existing = existingIter.next();
+							Port existing = existingIter.next();
 							if(
 								!coalesced.contains(existing)
-								&& existing.overlaps(portRange)
+								&& existing.overlaps(port)
 							) {
-								// Remove port number
-								delete(type, protocol, existing);
+								// Remove overlapping extra port
+								delete(existing, type);
 								existingIter.remove();
 							}
 						}
 					}
-					add(type, protocol, portRange);
+					if(defaultType != null) {
+						// When precisely overlaps default policy of a different type, have to modify into local policy
+						assert !type.equals(defaultType);
+						modify(port, type);
+					} else {
+						// Does not align precisely with any default policy, have to add into local policy
+						add(port, type);
+					}
 				}
 			}
 			// Remove any remaining extra ports (those that do not overlap the expected ports)
-			for(PortRange existing : existingPortRanges) {
+			for(Port existing : existingPorts) {
 				if(!coalesced.contains(existing)) {
-					delete(type, protocol, existing);
+					delete(existing, type);
 				}
 			}
 		}
