@@ -648,10 +648,12 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @param  type  The SELinux type for the given set of ports.
 	 *
+	 * @return  if any modification was made to the local policy
+	 *
 	 * @throws  IllegalArgumentException  if any overlapping port numbers found
 	 * @throws  IllegalStateException  if detected overlap with local policy of a different type
 	 */
-	public static void configure(Set<? extends Port> ports, String type) throws IllegalArgumentException, IllegalStateException, IOException {
+	public static boolean configure(Set<? extends Port> ports, String type) throws IllegalArgumentException, IllegalStateException, IOException {
 		// There must not be any overlapping port ranges
 		{
 			SortedSet<Port> overlaps = findOverlaps(ports);
@@ -696,6 +698,9 @@ public class Port implements Comparable<Port> {
 			// Load default policy
 			SortedMap<Port, String> defaultPolicy = getDefaultPolicy(localPolicy);
 
+			// Track if modified any policy
+			boolean modified = false;
+
 			// Add any missing ports that are not part of the default policy
 			for(Port port : coalesced) {
 				String defaultType = defaultPolicy.get(port);
@@ -728,14 +733,17 @@ public class Port implements Comparable<Port> {
 						// Does not align precisely with any default policy, have to add into local policy
 						add(port, type);
 					}
+					modified = true;
 				}
 			}
 			// Remove any remaining extra ports (those that do not overlap the expected ports)
 			for(Port existing : existingPorts) {
 				if(!coalesced.contains(existing)) {
 					delete(existing, type);
+					modified = true;
 				}
 			}
+			return modified;
 		}
 	}
 
