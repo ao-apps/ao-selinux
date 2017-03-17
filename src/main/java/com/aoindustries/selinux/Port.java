@@ -427,14 +427,9 @@ public class Port implements Comparable<Port> {
 	 * and <code>539-1023/tcp=hi_reserved_port_t</code>
 	 * </p>
 	 * <p>
-	 * It is an error if any port range of default policy overlaps but is not a subset of another default policy.
-	 * For example, it is not allowed to have both "10-20/tcp" and "15-25/tcp" in the default policy (overlap but not subset),
-	 * but is acceptable to have both "10-20/tcp" and "15-20/tcp".
-	 * </p>
-	 * <p>
 	 * To give more consistency: adjacent ports of the same SELinux type are automatically
-	 * coalesced during list.  For example, 80/tcp and 81/tcp are listed separately in
-	 * default policy, but are combined into 80-81/tcp for this view.
+	 * coalesced.  For example, 80/tcp and 81/tcp are listed separately in default policy,
+	 * but are combined into 80-81/tcp for this view.
 	 * </p>
 	 *
 	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type, covering all ports 1 through 65535 in both tcp and udp, coalesced into minimum entries.
