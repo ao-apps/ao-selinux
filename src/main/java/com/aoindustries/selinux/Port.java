@@ -115,20 +115,6 @@ public class Port implements Comparable<Port> {
 	private static final String EOL = System.getProperty("line.separator");
 
 	/**
-	 * Adds a port to a set of ports while checking for overlapping already in set.
-	 *
-	 * @throws  IllegalStateException  if overlap found and set not modified.
-	 */
-	/* TODO: Unused?
-	static void addCheckOverlap(Set<Port> ports, Port newPort) throws IllegalStateException {
-		// Look for overlap first
-		for(Port port : ports) {
-			if(port.overlaps(newPort)) throw new IllegalStateException("Overlapping ports detected: " + port + " and " + newPort);
-		}
-		if(!ports.add(newPort)) throw new AssertionError("Duplicate item in set without overlap detected");
-	}*/
-
-	/**
 	 * Searches for any overlapping port ranges in the given set.
 	 *
 	 * @return  The modifiable set of any port ranges involved in an overlap or an empty set if none overlapping.
@@ -577,24 +563,6 @@ public class Port implements Comparable<Port> {
 	}
 
 	/**
-	 * Filters a list of ports by SELinux type and protocol.
-	 *
-	 * @return  the modifiable list of port numbers of the given type and protocol
-	 */
-	/* TODO: Unused?
-	public static List<PortRange> filterByTypeAndProtocol(Iterable<? extends Port> ports, String type, Protocol protocol) {
-		List<PortRange> filtered = new ArrayList<PortRange>();
-		for(Port port : ports) {
-			if(
-				port.getType().equals(type)
-				&& port.getProtocol() == protocol
-			) filtered.addAll(port.getPortRanges());
-		}
-		return filtered;
-	}
-	 */
-
-	/**
 	 * Configures one SELinux type to have the given set of ports.
 	 * This includes the ability to override default policy.
 	 * This is the core purpose of this API: Just tell it what you want it
@@ -828,31 +796,6 @@ public class Port implements Comparable<Port> {
 	}
 
 	/**
-	 * Checks if this port range contains the given port.
-	 */
-	/* TODO: Unused?
-	public boolean hasPort(Protocol protocol, int port) {
-		return
-			protocol == this.protocol
-			&& port >= from
-			&& port <= to
-		;
-	}
-	 */
-
-	/**
-	 * Checks if this port range has any of the given ports.
-	 */
-	/* TODO: Unused?
-	public boolean hasPort(Protocol protocol, Iterable<? extends Integer> ports) {
-		for(int port : ports) {
-			if(hasPort(protocol, port)) return true;
-		}
-		return false;
-	}
-	 */
-
-	/**
 	 * Checks if this port is of the same protocol and overlaps the given port range.
 	 */
 	public boolean overlaps(Port other) {
@@ -863,32 +806,6 @@ public class Port implements Comparable<Port> {
 			&& other.from <= to
 		;
 	}
-
-	/**
-	 * Checks if this port overlaps any of the given port ranges.
-	 */
-	/* TODO: Unused?
-	public boolean overlaps(Iterable<? extends Port> ports) {
-		for(Port other : ports) {
-			if(overlaps(other)) return true;
-		}
-		return false;
-	}
-	 */
-
-	/**
-	 * Checks if this port is a subrange of the other port.
-	 * If the same range, it is considered a subrange.
-	 */
-	/* TODO: Unused?
-	boolean isSubRangeOf(Port other) {
-		return
-			protocol == other.protocol
-			&& from >= other.from
-			&& to <= other.to
-		;
-	}
-	 */
 
 	/**
 	 * Gets the part of this port range below the given port or {@code null} if none.
