@@ -56,7 +56,7 @@ class SEManage {
 		System.arraycopy(args, 0, command, 1, args.length);
 		ProcessResult result;
 		synchronized(semanageLock) {
-			result = ProcessResult.exec(SEMANAGE_EXE, "port", "--noheading", "--list");
+			result = ProcessResult.exec(command);
 		}
 		if(result.getExitVal() != 0) throw new IOException(result.getStderr());
 		return result;
