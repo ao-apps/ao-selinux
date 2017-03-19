@@ -1,6 +1,7 @@
 package com.aoindustries.selinux;
 
 import com.aoindustries.io.IoUtils;
+import com.aoindustries.net.IPortRange;
 import com.aoindustries.net.Port;
 import com.aoindustries.net.PortRange;
 import com.aoindustries.net.Protocol;
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+// TODO: Move these these to ao-net-types as appropriate
 public class SEManagePortTest {
 	
 	private static String loadResource(String resource) throws IOException {
@@ -76,7 +78,7 @@ public class SEManagePortTest {
 	public void testFindOverlaps2() throws ValidationException {
 		assertEquals(
 			AoCollections.singletonSortedSet(
-				PortRange.valueOf(10, 10, Protocol.TCP)
+				Port.valueOf(10, Protocol.TCP)
 			),
 			SEManagePort.findOverlaps(
 				Arrays.asList(
@@ -91,14 +93,14 @@ public class SEManagePortTest {
 	@Test
 	public void testFindOverlaps3() throws ValidationException {
 		assertEquals(
-			new TreeSet<PortRange>(
-				Arrays.asList(
-					PortRange.valueOf(10, 10, Protocol.TCP),
+			new TreeSet<IPortRange>(
+				Arrays.asList((IPortRange)
+					Port.valueOf(10, Protocol.TCP),
 					PortRange.valueOf(1, 10, Protocol.TCP)
 				)
 			),
 			SEManagePort.findOverlaps(
-				Arrays.asList(
+				Arrays.asList((IPortRange)
 					Port.valueOf(10, Protocol.TCP),
 					Port.valueOf(10, Protocol.UDP),
 					PortRange.valueOf(1, 10, Protocol.TCP)
@@ -109,22 +111,22 @@ public class SEManagePortTest {
 
 	@Test
 	public void testParseList() throws IOException, ValidationException {
-		SortedMap<PortRange, String> expected = new TreeMap<PortRange, String>();
+		SortedMap<IPortRange, String> expected = new TreeMap<IPortRange, String>();
 		// afs3_callback_port_t           tcp      7001
-		expected.put(PortRange.valueOf(7001, 7001, Protocol.TCP), "afs3_callback_port_t");
+		expected.put(Port.valueOf(7001, Protocol.TCP), "afs3_callback_port_t");
 		// afs3_callback_port_t           udp      7001
-		expected.put(PortRange.valueOf(7001, 7001, Protocol.UDP), "afs3_callback_port_t");
+		expected.put(Port.valueOf(7001, Protocol.UDP), "afs3_callback_port_t");
 		// afs_fs_port_t                  udp      7000, 7005
-		expected.put(PortRange.valueOf(7000, 7000, Protocol.UDP), "afs_fs_port_t");
-		expected.put(PortRange.valueOf(7005, 7005, Protocol.UDP), "afs_fs_port_t");
+		expected.put(Port.valueOf(7000, Protocol.UDP), "afs_fs_port_t");
+		expected.put(Port.valueOf(7005, Protocol.UDP), "afs_fs_port_t");
 		// amanda_port_t                  tcp      10080-10083
 		expected.put(PortRange.valueOf(10080, 10083, Protocol.TCP), "amanda_port_t");
 		// amanda_port_t                  udp      10080-10082
 		expected.put(PortRange.valueOf(10080, 10082, Protocol.UDP), "amanda_port_t");
 		// ssh_port_t                     tcp      22
-		expected.put(PortRange.valueOf(22, 22, Protocol.TCP), "ssh_port_t");
+		expected.put(Port.valueOf(22, Protocol.TCP), "ssh_port_t");
 		// zope_port_t                    tcp      8021
-		expected.put(PortRange.valueOf(8021, 8021, Protocol.TCP), "zope_port_t");
+		expected.put(Port.valueOf(8021, Protocol.TCP), "zope_port_t");
 		assertEquals(
 			expected,
 			SEManagePort.parseList(testDataSimpleSubset, null)
@@ -133,10 +135,10 @@ public class SEManagePortTest {
 
 	@Test
 	public void testParseLocalPolicy() throws IOException, ValidationException {
-		SortedMap<PortRange, String> expected = new TreeMap<PortRange, String>();
+		SortedMap<IPortRange, String> expected = new TreeMap<IPortRange, String>();
 		// ssh_port_t                     tcp      8991, 8008
-		expected.put(PortRange.valueOf(8991, 8991, Protocol.TCP), "ssh_port_t");
-		expected.put(PortRange.valueOf(8008, 8008, Protocol.TCP), "ssh_port_t");
+		expected.put(Port.valueOf(8991, Protocol.TCP), "ssh_port_t");
+		expected.put(Port.valueOf(8008, Protocol.TCP), "ssh_port_t");
 		assertEquals(
 			expected,
 			SEManagePort.parseLocalPolicy(testDataLocalWithModified8008)
@@ -153,35 +155,35 @@ public class SEManagePortTest {
 
 	@Test
 	public void testParseDefaultPolicy() throws IOException, ValidationException {
-		SortedMap<PortRange, String> localPolicy = SEManagePort.parseLocalPolicy(testDataLocalWithModified8008);
-		SortedMap<PortRange, String> defaultPolicy = SEManagePort.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
+		SortedMap<IPortRange, String> localPolicy = SEManagePort.parseLocalPolicy(testDataLocalWithModified8008);
+		SortedMap<IPortRange, String> defaultPolicy = SEManagePort.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
 		// Make sure the default policy is used for port 8080
 		assertEquals(
 			"http_port_t",
-			defaultPolicy.get(PortRange.valueOf(8008, 8008, Protocol.TCP))
+			defaultPolicy.get(Port.valueOf(8008, Protocol.TCP))
 		);
 	}
 
 	@Test
 	public void testParsePolicy() throws IOException, ValidationException {
-		SortedMap<PortRange, String> localPolicy = SEManagePort.parseLocalPolicy(testDataLocalWithModified8008);
-		SortedMap<PortRange, String> defaultPolicy = SEManagePort.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
-		SortedMap<PortRange, String> policy = SEManagePort.parsePolicy(localPolicy, defaultPolicy);
+		SortedMap<IPortRange, String> localPolicy = SEManagePort.parseLocalPolicy(testDataLocalWithModified8008);
+		SortedMap<IPortRange, String> defaultPolicy = SEManagePort.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
+		SortedMap<IPortRange, String> policy = SEManagePort.parsePolicy(localPolicy, defaultPolicy);
 		// Make sure the local policy is used for port 8080
 		assertEquals(
 			"ssh_port_t",
-			policy.get(PortRange.valueOf(8008, 8008, Protocol.TCP))
+			policy.get(Port.valueOf(8008, Protocol.TCP))
 		);
 	}
 
 	@Test
 	public void testGetPolicyCoverFullPortRange() throws IOException {
-		SortedMap<PortRange, String> localPolicy = SEManagePort.parseLocalPolicy(testDataLocalWithModified8008);
-		SortedMap<PortRange, String> defaultPolicy = SEManagePort.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
-		SortedMap<PortRange, String> policy = SEManagePort.parsePolicy(localPolicy, defaultPolicy);
+		SortedMap<IPortRange, String> localPolicy = SEManagePort.parseLocalPolicy(testDataLocalWithModified8008);
+		SortedMap<IPortRange, String> defaultPolicy = SEManagePort.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
+		SortedMap<IPortRange, String> policy = SEManagePort.parsePolicy(localPolicy, defaultPolicy);
 		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
-			PortRange lastPortRange = null;
-			for(PortRange portRange : policy.keySet()) {
+			IPortRange lastPortRange = null;
+			for(IPortRange portRange : policy.keySet()) {
 				if(portRange.getProtocol() == protocol) {
 					if(lastPortRange == null) {
 						assertEquals(
@@ -210,14 +212,14 @@ public class SEManagePortTest {
 
 	@Test
 	public void testGetPolicyCoalesced() throws IOException, ValidationException {
-		SortedMap<PortRange, String> localPolicy = SEManagePort.parseLocalPolicy(testDataLocalWithModified8008);
-		SortedMap<PortRange, String> defaultPolicy = SEManagePort.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
-		SortedMap<PortRange, String> policy = SEManagePort.parsePolicy(localPolicy, defaultPolicy);
+		SortedMap<IPortRange, String> localPolicy = SEManagePort.parseLocalPolicy(testDataLocalWithModified8008);
+		SortedMap<IPortRange, String> defaultPolicy = SEManagePort.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
+		SortedMap<IPortRange, String> policy = SEManagePort.parsePolicy(localPolicy, defaultPolicy);
 		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
-			PortRange lastPortRange = null;
+			IPortRange lastPortRange = null;
 			String lastType = null;
-			for(Map.Entry<PortRange, String> entry: policy.entrySet()) {
-				PortRange portRange = entry.getKey();
+			for(Map.Entry<IPortRange, String> entry: policy.entrySet()) {
+				IPortRange portRange = entry.getKey();
 				if(portRange.getProtocol() == protocol) {
 					String type = entry.getValue();
 					if(lastPortRange != null) {
@@ -252,7 +254,7 @@ public class SEManagePortTest {
 	public void testToString2() throws ValidationException {
 		assertEquals(
 			"167/TCP",
-			PortRange.valueOf(167, 167, Protocol.TCP).toString()
+			Port.valueOf(167, Protocol.TCP).toString()
 		);
 	}
 
@@ -260,7 +262,7 @@ public class SEManagePortTest {
 	public void testToString3() throws ValidationException {
 		assertEquals(
 			"67/UDP",
-			PortRange.valueOf(67, 67, Protocol.UDP).toString()
+			Port.valueOf(67, Protocol.UDP).toString()
 		);
 	}
 
@@ -272,7 +274,7 @@ public class SEManagePortTest {
 
 	public void testPortRangeMaxFrom() throws IOException, ValidationException {
 		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			PortRange.valueOf(65535, 65535, Protocol.TCP)
+			Port.valueOf(65535, Protocol.TCP)
 		);
 	}
 
@@ -292,7 +294,7 @@ public class SEManagePortTest {
 
 	public void testPortRangeMinTo() throws IOException, ValidationException {
 		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			PortRange.valueOf(1, 1, Protocol.TCP)
+			Port.valueOf(1, Protocol.TCP)
 		);
 	}
 
@@ -384,15 +386,15 @@ public class SEManagePortTest {
 	public void testGetPortRange3() throws ValidationException {
 		assertEquals(
 			"67",
-			SEManagePort.getPortRange(PortRange.valueOf(67, 67, Protocol.UDP))
+			SEManagePort.getPortRange(Port.valueOf(67, Protocol.UDP))
 		);
 	}
 
 	@Test
 	public void testOverlaps1() throws ValidationException {
 		assertTrue(
-			PortRange.valueOf(10, 10, Protocol.UDP).overlaps(
-				PortRange.valueOf(10, 10, Protocol.UDP)
+			Port.valueOf(10, Protocol.UDP).overlaps(
+				Port.valueOf(10, Protocol.UDP)
 			)
 		);
 	}
@@ -400,8 +402,8 @@ public class SEManagePortTest {
 	@Test
 	public void testOverlaps2() throws ValidationException {
 		assertFalse(
-			PortRange.valueOf(10, 10, Protocol.TCP).overlaps(
-				PortRange.valueOf(10, 10, Protocol.UDP)
+			Port.valueOf(10, Protocol.TCP).overlaps(
+				Port.valueOf(10, Protocol.UDP)
 			)
 		);
 	}
@@ -410,7 +412,7 @@ public class SEManagePortTest {
 	public void testOverlaps3() throws ValidationException {
 		assertTrue(
 			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				PortRange.valueOf(10, 10, Protocol.TCP)
+				Port.valueOf(10, Protocol.TCP)
 			)
 		);
 	}
@@ -419,7 +421,7 @@ public class SEManagePortTest {
 	public void testOverlaps4() throws ValidationException {
 		assertTrue(
 			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				PortRange.valueOf(5, 5, Protocol.TCP)
+				Port.valueOf(5, Protocol.TCP)
 			)
 		);
 	}
@@ -427,8 +429,8 @@ public class SEManagePortTest {
 	@Test
 	public void testOverlaps5() throws ValidationException {
 		assertFalse(
-			PortRange.valueOf(5, 5, Protocol.TCP).overlaps(
-				PortRange.valueOf(11, 11, Protocol.TCP)
+			Port.valueOf(5, Protocol.TCP).overlaps(
+				Port.valueOf(11, Protocol.TCP)
 			)
 		);
 	}
@@ -437,7 +439,7 @@ public class SEManagePortTest {
 	public void testOverlaps6() throws ValidationException {
 		assertFalse(
 			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				PortRange.valueOf(11, 11, Protocol.TCP)
+				Port.valueOf(11, Protocol.TCP)
 			)
 		);
 	}
@@ -446,7 +448,7 @@ public class SEManagePortTest {
 	public void testOverlaps7() throws ValidationException {
 		assertFalse(
 			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				PortRange.valueOf(4, 4, Protocol.TCP)
+				Port.valueOf(4, Protocol.TCP)
 			)
 		);
 	}
