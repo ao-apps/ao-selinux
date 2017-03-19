@@ -23,16 +23,22 @@
 package com.aoindustries.selinux;
 
 import com.aoindustries.lang.NullArgumentException;
+import com.aoindustries.net.IPortRange;
+import com.aoindustries.net.PortRange;
 import com.aoindustries.net.Protocol;
 import com.aoindustries.util.ComparatorUtils;
 import com.aoindustries.util.WrappedException;
+import com.aoindustries.validation.ValidationException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +53,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A {@link Port} is a non-overlapping mapping from (protocol, port-range) to SELinux type.
+ * A policy is a non-overlapping mapping from (port-range, protocol) to SELinux type.
  * Wraps functions of the <code>semanage port</code> commands.
  * <p>
  * This API hides the complexity of the interactions between default policy and local modifications.
@@ -71,12 +77,9 @@ import java.util.regex.Pattern;
  *
  * @author  AO Industries, Inc.
  */
-public class Port implements Comparable<Port> {
+public class SEManagePort {
 
-	private static final Logger logger = Logger.getLogger(Port.class.getName());
-
-	public static final int MIN_PORT = 1;
-	public static final int MAX_PORT = 65535;
+	private static final Logger logger = Logger.getLogger(SEManagePort.class.getName());
 
 	private static final Pattern listPattern = Pattern.compile("^(\\S+)\\s+(\\S+)\\s+(\\S.*)$");
 
@@ -90,26 +93,32 @@ public class Port implements Comparable<Port> {
 	 * <li>tcp/udp: 61001-65535: unreserved_port_t</li>
 	 * </ol>
 	 */
-	private static final SortedMap<Port, String> defaultPolicyExtensions;
+	private static final SortedMap<PortRange, String> defaultPolicyExtensions;
 	static {
-		SortedMap<Port, String> newMap = new TreeMap<Port, String>();
-		// tcp/udp: 1-511: reserved_port_t
-		newMap.put(new Port(Protocol.TCP, 1, 511), "reserved_port_t");
-		newMap.put(new Port(Protocol.UDP, 1, 511), "reserved_port_t");
-		// tcp/udp: 512-1023: hi_reserved_port_t
-		newMap.put(new Port(Protocol.TCP, 512, 1023), "hi_reserved_port_t");
-		newMap.put(new Port(Protocol.UDP, 512, 1023), "hi_reserved_port_t");
-		// tcp/udp: 1024-32767: unreserved_port_t
-		newMap.put(new Port(Protocol.TCP, 1024, 32767), "unreserved_port_t");
-		newMap.put(new Port(Protocol.UDP, 1024, 32767), "unreserved_port_t");
-		// tcp/udp: 32768-61000: ephemeral_port_t
-		newMap.put(new Port(Protocol.TCP, 32768, 61000), "ephemeral_port_t");
-		newMap.put(new Port(Protocol.UDP, 32768, 61000), "ephemeral_port_t");
-		// tcp/udp: 61001-65535: unreserved_port_t
-		newMap.put(new Port(Protocol.TCP, 61001, 65535), "unreserved_port_t");
-		newMap.put(new Port(Protocol.UDP, 61001, 65535), "unreserved_port_t");
-		assert assertNoOverlaps(newMap);
-		defaultPolicyExtensions = Collections.unmodifiableSortedMap(newMap);
+		try {
+			SortedMap<PortRange, String> newMap = new TreeMap<PortRange, String>();
+			// tcp/udp: 1-511: reserved_port_t
+			newMap.put(PortRange.valueOf(1, 511, Protocol.TCP), "reserved_port_t");
+			newMap.put(PortRange.valueOf(1, 511, Protocol.UDP), "reserved_port_t");
+			// tcp/udp: 512-1023: hi_reserved_port_t
+			newMap.put(PortRange.valueOf(512, 1023, Protocol.TCP), "hi_reserved_port_t");
+			newMap.put(PortRange.valueOf(512, 1023, Protocol.UDP), "hi_reserved_port_t");
+			// tcp/udp: 1024-32767: unreserved_port_t
+			newMap.put(PortRange.valueOf(1024, 32767, Protocol.TCP), "unreserved_port_t");
+			newMap.put(PortRange.valueOf(1024, 32767, Protocol.UDP), "unreserved_port_t");
+			// tcp/udp: 32768-61000: ephemeral_port_t
+			newMap.put(PortRange.valueOf(32768, 61000, Protocol.TCP), "ephemeral_port_t");
+			newMap.put(PortRange.valueOf(32768, 61000, Protocol.UDP), "ephemeral_port_t");
+			// tcp/udp: 61001-65535: unreserved_port_t
+			newMap.put(PortRange.valueOf(61001, 65535, Protocol.TCP), "unreserved_port_t");
+			newMap.put(PortRange.valueOf(61001, 65535, Protocol.UDP), "unreserved_port_t");
+			assert assertNoOverlaps(newMap);
+			defaultPolicyExtensions = Collections.unmodifiableSortedMap(newMap);
+		} catch(ValidationException e) {
+			AssertionError ae = new AssertionError();
+			ae.initCause(e);
+			throw ae;
+		}
 	}
 
 	private static final String EOL = System.getProperty("line.separator");
@@ -121,13 +130,22 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @implNote This implementation is probably not the best regarding computational complexity, but is a simple implementation.
 	 */
-	static SortedSet<Port> findOverlaps(Iterable<? extends Port> ports) {
-		SortedSet<Port> overlaps = new TreeSet<Port>();
-		for(Port p1 : ports) {
-			for(Port p2 : ports) {
-				if(p1 != p2 && p1.overlaps(p2)) {
-					overlaps.add(p1);
-					overlaps.add(p2);
+	static SortedSet<PortRange> findOverlaps(Iterable<? extends IPortRange> portRanges) {
+		List<PortRange> prs = new ArrayList<PortRange>(
+			(portRanges instanceof Collection)
+				? ((Collection)portRanges).size()
+				: 10
+		);
+		for(IPortRange ipr : portRanges) prs.add(ipr.getPortRange());
+		SortedSet<PortRange> overlaps = new TreeSet<PortRange>();
+		int size = prs.size();
+		for(int i1 = 0; i1 < size; i1++) {
+			PortRange pr1 = prs.get(i1);
+			for(int i2 = 0; i2 < i1; i2++) {
+				PortRange pr2 = prs.get(i2);
+				if(pr1.overlaps(pr2)) {
+					overlaps.add(pr1);
+					overlaps.add(pr2);
 				}
 			}
 		}
@@ -137,8 +155,8 @@ public class Port implements Comparable<Port> {
 	/**
 	 * Gets a full line-by-line dump of the policy.
 	 */
-	private static <T extends Appendable> T dumpPolicy(SortedMap<? extends Port, String> policy, T out) throws IOException {
-		for(Map.Entry<? extends Port, String> entry : policy.entrySet()) {
+	private static <T extends Appendable> T dumpPolicy(SortedMap<PortRange, String> policy, T out) throws IOException {
+		for(Map.Entry<PortRange, String> entry : policy.entrySet()) {
 			out
 				.append(entry.getKey().toString())
 				.append('=')
@@ -151,7 +169,7 @@ public class Port implements Comparable<Port> {
 	/**
 	 * Gets a full line-by-line dump of the policy.
 	 */
-	private static String dumpPolicy(String firstLine, SortedMap<? extends Port, String> policy) {
+	private static String dumpPolicy(String firstLine, SortedMap<PortRange, String> policy) {
 		try {
 			return dumpPolicy(
 				policy,
@@ -173,13 +191,13 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @throws AssertionError if any overlap found
 	 */
-	private static boolean assertNoOverlaps(SortedMap<? extends Port, String> policy) throws AssertionError {
-		SortedSet<Port> overlaps = findOverlaps(policy.keySet());
+	private static boolean assertNoOverlaps(SortedMap<PortRange, String> policy) throws AssertionError {
+		SortedSet<PortRange> overlaps = findOverlaps(policy.keySet());
 		if(!overlaps.isEmpty()) {
 			if(logger.isLoggable(Level.FINE)) {
 				logger.fine(dumpPolicy("Policy with overlapping ports: " + overlaps, policy));
 			}
-			throw new AssertionError("Ports overlap: " + overlaps);
+			throw new AssertionError("Port ranges overlap: " + overlaps);
 		}
 		return true;
 	}
@@ -191,9 +209,9 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @throws AssertionError if any overlap found
 	 */
-	private static boolean assertNoOverlaps(SortedSet<? extends Port> ports) throws AssertionError {
-		SortedSet<Port> overlaps = findOverlaps(ports);
-		if(!overlaps.isEmpty()) throw new AssertionError("Ports overlap: " + ports);
+	private static boolean assertNoOverlaps(Iterable<? extends IPortRange> portRanges) throws AssertionError {
+		SortedSet<PortRange> overlaps = findOverlaps(portRanges);
+		if(!overlaps.isEmpty()) throw new AssertionError("Port ranges overlap: " + overlaps);
 		return true;
 	}
 
@@ -208,27 +226,33 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @return the modifiable map of coalesced port ranges.
 	 */
-	private static SortedMap<Port, String> coalesce(SortedMap<? extends Port, String> policy) {
+	private static SortedMap<PortRange, String> coalesce(SortedMap<PortRange, String> policy) {
 		assert assertNoOverlaps(policy);
-		SortedMap<Port, String> result = new TreeMap<Port, String>();
+		SortedMap<PortRange, String> result = new TreeMap<PortRange, String>();
 		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
 		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
-			Port lastPort = null;
+			PortRange lastPortRange = null;
 			String lastType = null;
-			for(Map.Entry<? extends Port, String> entry : policy.entrySet()) {
-				Port port = entry.getKey();
-				if(protocol == port.getProtocol()) {
+			for(Map.Entry<PortRange, String> entry : policy.entrySet()) {
+				PortRange portRange = entry.getKey();
+				if(protocol == portRange.getProtocol()) {
 					String type = entry.getValue();
 					if(
-						lastPort != null
-						&& (lastPort.getTo() + 1) == port.getFrom()
+						lastPortRange != null
+						&& (lastPortRange.getTo() + 1) == portRange.getFrom()
 						&& type.equals(lastType)
 					) {
-						result.remove(lastPort);
-						port = new Port(protocol, lastPort.getFrom(), port.getTo());
+						result.remove(lastPortRange);
+						try {
+							portRange = PortRange.valueOf(lastPortRange.getFrom(), portRange.getTo(), protocol);
+						} catch(ValidationException e) {
+							AssertionError ae = new AssertionError();
+							ae.initCause(e);
+							throw ae;
+						}
 					}
-					result.put(port, type);
-					lastPort = port;
+					result.put(portRange, type);
+					lastPortRange = portRange;
 					lastType = type;
 				}
 			}
@@ -238,29 +262,36 @@ public class Port implements Comparable<Port> {
 	}
 
 	/**
-	 * Coalesce for port sets.
+	 * Coalesce for sets of port ranges.
 	 *
 	 * @see  #coalesce(java.util.SortedMap)
 	 *
 	 * @return the modifiable set of coalesced port ranges.
 	 */
-	private static SortedSet<Port> coalesce(SortedSet<? extends Port> ports) {
-		assert assertNoOverlaps(ports);
-		SortedSet<Port> result = new TreeSet<Port>();
+	private static SortedSet<PortRange> coalesce(SortedSet<? extends IPortRange> portRanges) {
+		assert assertNoOverlaps(portRanges);
+		SortedSet<PortRange> result = new TreeSet<PortRange>();
 		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
 		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
-			Port lastPort = null;
-			for(Port port : ports) {
-				if(protocol == port.getProtocol()) {
+			PortRange lastPortRange = null;
+			for(IPortRange ipr : portRanges) {
+				PortRange portRange = ipr.getPortRange();
+				if(protocol == portRange.getProtocol()) {
 					if(
-						lastPort != null
-						&& (lastPort.getTo() + 1) == port.getFrom()
+						lastPortRange != null
+						&& (lastPortRange.getTo() + 1) == portRange.getFrom()
 					) {
-						result.remove(lastPort);
-						port = new Port(protocol, lastPort.getFrom(), port.getTo());
+						result.remove(lastPortRange);
+						try {
+							portRange = PortRange.valueOf(lastPortRange.getFrom(), portRange.getTo(), protocol);
+						} catch(ValidationException e) {
+							AssertionError ae = new AssertionError();
+							ae.initCause(e);
+							throw ae;
+						}
 					}
-					result.add(port);
-					lastPort = port;
+					result.add(portRange);
+					lastPortRange = portRange;
 				}
 			}
 		}
@@ -278,8 +309,8 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type.
 	 */
-	static SortedMap<Port,String> parseList(String stdout, Map<? extends Port,? extends String> ignore) throws IOException {
-		SortedMap<Port, String> ports = new TreeMap<Port, String>();
+	static SortedMap<PortRange,String> parseList(String stdout, Map<PortRange, String> ignore) throws IOException {
+		SortedMap<PortRange, String> portRanges = new TreeMap<PortRange, String>();
 		BufferedReader in = new BufferedReader(new StringReader(stdout));
 		String line;
 		while((line = in.readLine()) != null) {
@@ -293,34 +324,34 @@ public class Port implements Comparable<Port> {
 				StringTokenizer tokens = new StringTokenizer(matcher.group(3), ", ");
 				while(tokens.hasMoreTokens()) {
 					foundPortRange = true;
-					Port port;
+					PortRange portRange;
 					{
 						String token = tokens.nextToken();
 						int hyphenPos = token.indexOf('-');
 						if(hyphenPos == -1) {
-							port = new Port(
-								protocol,
-								Integer.parseInt(token)
-							);
+							int port = Integer.parseInt(token);
+							portRange = PortRange.valueOf(port, port, protocol);
 						} else {
-							port = new Port(
-								protocol,
+							portRange = PortRange.valueOf(
 								Integer.parseInt(token.substring(0, hyphenPos)),
-								Integer.parseInt(token.substring(hyphenPos + 1))
+								Integer.parseInt(token.substring(hyphenPos + 1)),
+								protocol
 							);
 						}
 					}
-					if(ignore == null || !type.equals(ignore.get(port))) {
-						String existingType = ports.put(port, type);
-						if(existingType != null) throw new IllegalStateException("Duplicate types on same port (" + port + "): " + existingType + " and " + type);
+					if(ignore == null || !type.equals(ignore.get(portRange))) {
+						String existingType = portRanges.put(portRange, type);
+						if(existingType != null) throw new IllegalStateException("Duplicate types on same port (" + portRange + "): " + existingType + " and " + type);
 					}
 				}
 				if(!foundPortRange) throw new IOException("No port numbers found: " + line);
 			} catch(IllegalStateException e) {
 				throw new WrappedException("line = " + line, e);
+			} catch(ValidationException e) {
+				throw new WrappedException("line = " + line, e);
 			}
 		}
-		return Collections.unmodifiableSortedMap(ports);
+		return Collections.unmodifiableSortedMap(portRanges);
 	}
 
 	/**
@@ -329,7 +360,7 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type.
 	 */
-	private static SortedMap<Port,String> getLocalPolicy() throws IOException {
+	private static SortedMap<PortRange,String> getLocalPolicy() throws IOException {
 		return parseLocalPolicy(SEManage.execSemanage("port", "--noheading", "--list", "--locallist").getStdout());
 	}
 
@@ -339,8 +370,8 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type.
 	 */
-	static SortedMap<Port,String> parseLocalPolicy(String stdout) throws IOException {
-		SortedMap<Port,String> localPolicy = parseList(stdout, null);
+	static SortedMap<PortRange,String> parseLocalPolicy(String stdout) throws IOException {
+		SortedMap<PortRange,String> localPolicy = parseList(stdout, null);
 		if(logger.isLoggable(Level.FINEST)) {
 			logger.finest(dumpPolicy("Local Policy:", localPolicy));
 		}
@@ -362,7 +393,7 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @return  the unmodifiable mapping of possibly overlapping port ranges to SELinux type.
 	 */
-	private static SortedMap<Port,String> getDefaultPolicy(SortedMap<Port,String> localPolicy) throws IOException {
+	private static SortedMap<PortRange,String> getDefaultPolicy(SortedMap<PortRange,String> localPolicy) throws IOException {
 		return parseDefaultPolicy(SEManage.execSemanage("port", "--noheading", "--list").getStdout(), localPolicy);
 	}
 
@@ -372,9 +403,9 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @return  the unmodifiable mapping of possibly overlapping port ranges to SELinux type.
 	 */
-	static SortedMap<Port,String> parseDefaultPolicy(String stdout, SortedMap<Port,String> localPolicy) throws IOException {
+	static SortedMap<PortRange,String> parseDefaultPolicy(String stdout, SortedMap<PortRange,String> localPolicy) throws IOException {
 		assert assertNoOverlaps(localPolicy);
-		SortedMap<Port, String> defaultPolicy = parseList(stdout, localPolicy);
+		SortedMap<PortRange, String> defaultPolicy = parseList(stdout, localPolicy);
 		if(logger.isLoggable(Level.FINEST)) {
 			logger.finest(dumpPolicy("Default Policy:", defaultPolicy));
 		}
@@ -387,32 +418,32 @@ public class Port implements Comparable<Port> {
 	 * The new entry is not coalesced with existing entries.
 	 * Modifies the policy map in-place.
 	 */
-	private static void overlay(SortedMap<Port, String> policy, Port port, String type) {
+	private static void overlay(SortedMap<PortRange, String> policy, PortRange portRange, String type) {
 		// Update in a single pass, ending iteration is past the port.to
-		Iterator<Map.Entry<Port, String>> entryIter = policy.entrySet().iterator();
-		Map<Port, String> toAdd = new HashMap<Port, String>();
+		Iterator<Map.Entry<PortRange, String>> entryIter = policy.entrySet().iterator();
+		Map<PortRange, String> toAdd = new HashMap<PortRange, String>();
 		while(entryIter.hasNext()) {
-			Map.Entry<Port, String> existingEntry = entryIter.next();
-			Port existingPort = existingEntry.getKey();
-			if(existingPort.getFrom() > port.getTo()) {
-				// Past port.to, end iteration
+			Map.Entry<PortRange, String> existingEntry = entryIter.next();
+			PortRange existingPortRange = existingEntry.getKey();
+			if(existingPortRange.getFrom() > portRange.getTo()) {
+				// Past portRange.to, end iteration
 				break;
 			}
-			if(port.overlaps(existingPort)) {
+			if(portRange.overlaps(existingPortRange)) {
 				// Get value before removing from map, because value of entry will change!
 				String existingType = existingEntry.getValue();
 				entryIter.remove();
 				// Big is split and added
-				Port lowerSplit = existingPort.splitBelow(port.getFrom());
+				PortRange lowerSplit = existingPortRange.splitBelow(portRange.getFrom());
 				if(lowerSplit != null && toAdd.put(lowerSplit, existingType) != null) throw new AssertionError();
-				Port upperSplit = existingPort.splitAbove(port.getTo());
+				PortRange upperSplit = existingPortRange.splitAbove(portRange.getTo());
 				if(upperSplit != null && toAdd.put(upperSplit, existingType) != null) throw new AssertionError();
 			}
 		}
 		// Add-back all the results of splitting
 		policy.putAll(toAdd);
 		// Now that there is a hole in the policy port ranges, add the new entry
-		if(policy.put(port, type) != null) throw new AssertionError();
+		if(policy.put(portRange, type) != null) throw new AssertionError();
 	}
 
 	/**
@@ -436,9 +467,9 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type, covering all ports 1 through 65535 in both tcp and udp, coalesced into minimum entries.
 	 */
-	public static SortedMap<Port,String> getPolicy() throws IOException {
-		SortedMap<Port,String> localPolicy;
-		SortedMap<Port,String> defaultPolicy;
+	public static SortedMap<PortRange,String> getPolicy() throws IOException {
+		SortedMap<PortRange,String> localPolicy;
+		SortedMap<PortRange,String> defaultPolicy;
 		synchronized(SEManage.semanageLock) {
 			localPolicy = getLocalPolicy();
 			defaultPolicy = getDefaultPolicy(localPolicy);
@@ -449,45 +480,45 @@ public class Port implements Comparable<Port> {
 	/**
 	 * @see  #getPolicy()
 	 */
-	static SortedMap<Port, String> parsePolicy(SortedMap<Port, String> localPolicy, SortedMap<Port, String> defaultPolicy) {
+	static SortedMap<PortRange, String> parsePolicy(SortedMap<PortRange, String> localPolicy, SortedMap<PortRange, String> defaultPolicy) {
 		assert assertNoOverlaps(localPolicy);
-		SortedMap<Port, String> policy = new TreeMap<Port, String>();
+		SortedMap<PortRange, String> policy = new TreeMap<PortRange, String>();
 		// Add defaults to cover all ports 1 through 65535, if not found in provided default policy
-		for(Map.Entry<Port, String> extensionEntry : defaultPolicyExtensions.entrySet()) {
-			Port port = extensionEntry.getKey();
-			if(!defaultPolicy.containsKey(port)) {
-				policy.put(port, extensionEntry.getValue());
+		for(Map.Entry<PortRange, String> extensionEntry : defaultPolicyExtensions.entrySet()) {
+			PortRange portRange = extensionEntry.getKey();
+			if(!defaultPolicy.containsKey(portRange)) {
+				policy.put(portRange, extensionEntry.getValue());
 			}
 		}
 		assert assertNoOverlaps(policy);
 		// Will add default policy in the order from largest ranges to smallest as this seems
 		// to be the way SELinux applies overlapping default policies: smaller ranges take precendence
 		// over larger ranges.
-		SortedMap<Port, String> sortedDefaultPolicy = new TreeMap<Port, String>(
-			new Comparator<Port>() {
+		SortedMap<PortRange, String> sortedDefaultPolicy = new TreeMap<PortRange, String>(
+			new Comparator<PortRange>() {
 				/**
 				 * Orders by (to-from) desc, protocol asc, from asc, to asc
 				 */
 				@Override
-				public int compare(Port p1, Port p2) {
+				public int compare(PortRange pr1, PortRange pr2) {
 					// (to-from) desc
-					int size1 = p1.getTo() - p1.getFrom();
-					int size2 = p2.getTo() - p2.getFrom();
+					int size1 = pr1.getTo() - pr1.getFrom();
+					int size2 = pr2.getTo() - pr2.getFrom();
 					int diff = ComparatorUtils.compare(size2, size1);
 					if(diff != 0) return diff;
 					// to asc, from asc
-					return p1.compareTo(p2);
+					return pr1.compareTo(pr2);
 				}
 			}
 		);
 		sortedDefaultPolicy.putAll(defaultPolicy);
 		// Next, add default policy, splitting any overlapping
-		for(Map.Entry<Port, String> defaultEntry : sortedDefaultPolicy.entrySet()) {
+		for(Map.Entry<PortRange, String> defaultEntry : sortedDefaultPolicy.entrySet()) {
 			overlay(policy, defaultEntry.getKey(), defaultEntry.getValue());
 		}
 		assert assertNoOverlaps(policy);
 		// Finally, add local policy, removing or splitting any overlapping
-		for(Map.Entry<Port, String> localEntry : localPolicy.entrySet()) {
+		for(Map.Entry<PortRange, String> localEntry : localPolicy.entrySet()) {
 			overlay(policy, localEntry.getKey(), localEntry.getValue());
 		}
 		// Coalesce
@@ -502,15 +533,15 @@ public class Port implements Comparable<Port> {
 	/**
 	 * Calls <code>semanage port -a -t <i>type</i> -p <i>protocol</i> <i>port(s)</i></code>.
 	 */
-	private static void add(Port port, String type) throws IOException {
+	private static void add(PortRange portRange, String type) throws IOException {
 		if(logger.isLoggable(Level.INFO)) {
-			logger.info("Adding SELinux port: " + port + "=" + type);
+			logger.info("Adding SELinux port: " + portRange + "=" + type);
 		}
 		SEManage.execSemanage(
 			"port", "-a",
 			"-t", type,
-			"-p", port.getProtocol().name().toLowerCase(Locale.ROOT),
-			port.getPortRange()
+			"-p", portRange.getProtocol().name().toLowerCase(Locale.ROOT),
+			getPortRange(portRange)
 		);
 	}
 
@@ -519,26 +550,26 @@ public class Port implements Comparable<Port> {
 	 * Modify is used when we need to precisely overlap a default policy entry.
 	 * Overlapping, but not same exact from/to, use add.
 	 */
-	private static void modify(Port port, String type) throws IOException {
-		logger.info("Modifying SELinux port: " + port + "=" + type);
+	private static void modify(PortRange portRange, String type) throws IOException {
+		logger.info("Modifying SELinux port: " + portRange + "=" + type);
 		SEManage.execSemanage(
 			"port", "-m",
 			"-t", type,
-			"-p", port.getProtocol().name().toLowerCase(Locale.ROOT),
-			port.getPortRange()
+			"-p", portRange.getProtocol().name().toLowerCase(Locale.ROOT),
+			getPortRange(portRange)
 		);
 	}
 
 	/**
 	 * Calls <code>semanage port -d -t <i>type</i> -p <i>protocol</i> <i>port(s)</i></code>.
 	 */
-	private static void delete(Port port, String type) throws IOException {
-		logger.info("Deleting SELinux port: " + port + "=" + type);
+	private static void delete(PortRange portRange, String type) throws IOException {
+		logger.info("Deleting SELinux port: " + portRange + "=" + type);
 		SEManage.execSemanage(
 			"port", "-d",
 			"-t", type,
-			"-p", port.getProtocol().name().toLowerCase(Locale.ROOT),
-			port.getPortRange()
+			"-p", portRange.getProtocol().name().toLowerCase(Locale.ROOT),
+			getPortRange(portRange)
 		);
 	}
 
@@ -547,9 +578,9 @@ public class Port implements Comparable<Port> {
 	 *
 	 * @return  the modifiable sorted set of ports of the given type
 	 */
-	public static SortedSet<Port> filterByType(Map<? extends Port, String> policy, String type) {
-		SortedSet<Port> filtered = new TreeSet<Port>();
-		for(Map.Entry<? extends Port, String> entry : policy.entrySet()) {
+	public static <PR extends IPortRange> SortedSet<PR> filterByType(Map<? extends PR, String> policy, String type) {
+		SortedSet<PR> filtered = new TreeSet<PR>();
+		for(Map.Entry<? extends PR, String> entry : policy.entrySet()) {
 			if(entry.getValue().equals(type)) {
 				if(!filtered.add(entry.getKey())) throw new AssertionError();
 			}
@@ -581,8 +612,8 @@ public class Port implements Comparable<Port> {
 	 * considered.  First, if the local policy precisely matches a default policy
 	 * entry of the expected type, the local policy entry is not added.  Second, if
 	 * the local policy has the same exact port range as a default policy entry (of
-	 * a different type), {@link #modify(com.aoindustries.selinux.Port, java.lang.String)}
-	 * will be performed instead of {@link #add(com.aoindustries.selinux.Port, java.lang.String)}.
+	 * a different type), {@link #modify(com.aoindustries.net.PortRange, java.lang.String)}
+	 * will be performed instead of {@link #add(com.aoindustries.net.PortRange, java.lang.String)}.
 	 * </p>
 	 * <p>
 	 * In the second modification pass, any remaining extra local policy entries
@@ -606,7 +637,7 @@ public class Port implements Comparable<Port> {
 	 *            policy of 22/tcp.  One possible benefit of this more complete local
 	 *            policy is more thorough detection of local policy conflicts.
 	 *
-	 * @param  ports  The set of all ports that should be set to the given type.
+	 * @param  portRanges  The set of all ports that should be set to the given type.
 	 *                There must not be any overlap in the provided port ranges.
 	 *
 	 * @param  type  The SELinux type for the given set of ports.
@@ -616,72 +647,73 @@ public class Port implements Comparable<Port> {
 	 * @throws  IllegalArgumentException  if any overlapping port numbers found
 	 * @throws  IllegalStateException  if detected overlap with local policy of a different type
 	 */
-	public static boolean configure(Set<? extends Port> ports, String type) throws IllegalArgumentException, IllegalStateException, IOException {
+	public static boolean configure(Set<? extends IPortRange> portRanges, String type) throws IllegalArgumentException, IllegalStateException, IOException {
 		// There must not be any overlapping port ranges
 		{
-			SortedSet<Port> overlaps = findOverlaps(ports);
+			SortedSet<PortRange> overlaps = findOverlaps(portRanges);
 			if(!overlaps.isEmpty()) {
-				throw new IllegalArgumentException("Ports overlap: " + overlaps);
+				throw new IllegalArgumentException("Port ranges overlap: " + overlaps);
 			}
 		}
 		synchronized(SEManage.semanageLock) {
 			// Load local policy
-			SortedMap<Port, String> localPolicy = getLocalPolicy();
+			SortedMap<PortRange, String> localPolicy = getLocalPolicy();
 
 			// Check for any conflicts with any other local policy
 			{
-				SortedMap<Port, String> conflicts = new TreeMap<Port, String>();
-				for(Port port : ports) {
-					int portTo = port.getTo();
-					for(Map.Entry<Port, String> localEntry : localPolicy.entrySet()) {
-						Port localPort = localEntry.getKey();
-						if(localPort.getFrom() > portTo) {
-							// Past port.to, end iteration
+				SortedMap<PortRange, String> conflicts = new TreeMap<PortRange, String>();
+				for(IPortRange ipr : portRanges) {
+					PortRange portRange = ipr.getPortRange();
+					int portTo = portRange.getTo();
+					for(Map.Entry<PortRange, String> localEntry : localPolicy.entrySet()) {
+						PortRange localPortRange = localEntry.getKey();
+						if(localPortRange.getFrom() > portTo) {
+							// Past portRange.to, end iteration
 							break;
 						}
-						if(port.overlaps(localPort)) {
+						if(portRange.overlaps(localPortRange)) {
 							String localType = localEntry.getValue();
 							if(!type.equals(localType)) {
-								conflicts.put(localPort, localType);
+								conflicts.put(localPortRange, localType);
 							}
 						}
 					}
 				}
 				if(!conflicts.isEmpty()) {
-					throw new IllegalStateException("Ports (" + ports + ") of type " + type + " conflict with other local policy: " + conflicts);
+					throw new IllegalStateException("Port ranges (" + portRanges + ") of type " + type + " conflict with other local policy: " + conflicts);
 				}
 			}
 
 			// Coalesce the parameters
-			SortedSet<Port> coalesced = coalesce(new TreeSet<Port>(ports));
+			SortedSet<PortRange> coalesced = coalesce(new TreeSet<IPortRange>(portRanges));
 
 			// Find all local policy for this type
-			SortedSet<Port> existingPorts = filterByType(localPolicy, type);
+			SortedSet<PortRange> existingPortRanges = filterByType(localPolicy, type);
 
 			// Track if modified any policy
 			boolean modified = false;
 
 			if(!coalesced.isEmpty()) {
 				// Load default policy
-				SortedMap<Port, String> defaultPolicy = getDefaultPolicy(localPolicy);
+				SortedMap<PortRange, String> defaultPolicy = getDefaultPolicy(localPolicy);
 
 				// Add any missing ports that are not part of the default policy
-				for(Port port : coalesced) {
-					String defaultType = defaultPolicy.get(port);
+				for(PortRange portRange : coalesced) {
+					String defaultType = defaultPolicy.get(portRange);
 					if(
 						// Only add local policy when does not match default policy exactly (both range and type)
 						!type.equals(defaultType)
 						// Also check if already part of local policy
-						&& !existingPorts.contains(port)
+						&& !existingPortRanges.contains(portRange)
 					) {
 						// Remove any extra ports that overlap the port range we're adding.
 						{
-							Iterator<Port> existingIter = existingPorts.iterator();
+							Iterator<PortRange> existingIter = existingPortRanges.iterator();
 							while(existingIter.hasNext()) {
-								Port existing = existingIter.next();
+								PortRange existing = existingIter.next();
 								if(
 									!coalesced.contains(existing)
-									&& existing.overlaps(port)
+									&& existing.overlaps(portRange)
 								) {
 									// Remove overlapping extra port
 									delete(existing, type);
@@ -692,17 +724,17 @@ public class Port implements Comparable<Port> {
 						if(defaultType != null) {
 							// When precisely overlaps default policy of a different type, have to modify into local policy
 							assert !type.equals(defaultType);
-							modify(port, type);
+							modify(portRange, type);
 						} else {
 							// Does not align precisely with any default policy, have to add into local policy
-							add(port, type);
+							add(portRange, type);
 						}
 						modified = true;
 					}
 				}
 			}
 			// Remove any remaining extra ports (those that do not overlap the expected ports)
-			for(Port existing : existingPorts) {
+			for(PortRange existing : existingPortRanges) {
 				if(!coalesced.contains(existing)) {
 					delete(existing, type);
 					modified = true;
@@ -712,111 +744,20 @@ public class Port implements Comparable<Port> {
 		}
 	}
 
-	private final Protocol protocol;
-	private final int from;
-	private final int to;
-
-	public Port(Protocol protocol, int port) {
-		this(protocol, port, port);
-	}
-
-	public Port(Protocol protocol, int from, int to) {
-		this.protocol = NullArgumentException.checkNotNull(protocol, "protocol");
-		if(from < MIN_PORT) throw new IllegalArgumentException("from < MIN_PORT: " + from + " < " + MIN_PORT);
-		if(from > MAX_PORT) throw new IllegalArgumentException("from > MAX_PORT: " + from + " > " + MAX_PORT);
-		if(to < MIN_PORT) throw new IllegalArgumentException("to < MIN_PORT: " + to + " < " + MIN_PORT);
-		if(to > MAX_PORT) throw new IllegalArgumentException("to > MAX_PORT: " + to + " > " + MAX_PORT);
-		if(to < from) throw new IllegalArgumentException("to < from: " + to + " < " + from);
-		this.from = from;
-		this.to = to;
-	}
-
-	@Override
-	public String toString() {
-		return getPortRange() + '/' + protocol;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if(!(obj instanceof Port)) return false;
-		Port other = (Port)obj;
-		return
-			protocol == other.protocol
-			&& from == other.from
-			&& to == other.to
-		;
-	}
-
-	@Override
-	public int hashCode() {
-		int hash = protocol.hashCode();
-		hash = hash * 31 + from;
-		hash = hash * 31 + to;
-		return hash;
-	}
-
-	/**
-	 * Ordered by from, to, protocol.
-	 * The fact that is ordered by "from" is used to break loops, this ordering
-	 * must not be changed without adjusting other code.
-	 */
-	@Override
-	public int compareTo(Port other) {
-		// Java 1.8: Use Integer.compare instead
-		int diff = ComparatorUtils.compare(from, other.from);
-		if(diff != 0) return diff;
-		diff = ComparatorUtils.compare(to, other.to);
-		if(diff != 0) return diff;
-		return protocol.compareTo(other.protocol);
-	}
-
-	public Protocol getProtocol() {
-		return protocol;
-	}
-
-	public int getFrom() {
-		return from;
-	}
-
-	public int getTo() {
-		return to;
-	}
-
 	/**
 	 * Gets a string representation of the port range, appropriate for passing to <code>semanage</code>.
 	 */
-	public String getPortRange() {
+	static String getPortRange(IPortRange portRange) {
+		PortRange pr = portRange.getPortRange();
+		int from = pr.getFrom();
+		int to = pr.getTo();
 		if(from == to) return Integer.toString(from);
 		else return Integer.toString(from) + '-' + Integer.toString(to);
 	}
 
 	/**
-	 * Checks if this port is of the same protocol and overlaps the given port range.
+	 * Make no instances.
 	 */
-	public boolean overlaps(Port other) {
-		// See http://stackoverflow.com/questions/3269434/whats-the-most-efficient-way-to-test-two-integer-ranges-for-overlap
-		return
-			protocol == other.protocol
-			&& from <= other.to
-			&& other.from <= to
-		;
-	}
-
-	/**
-	 * Gets the part of this port range below the given port or {@code null} if none.
-	 */
-	Port splitBelow(int below) {
-		int newTo = Math.min(to, below - 1);
-		if(newTo >= from) return new Port(protocol, from, newTo);
-		else return null;
-	}
-
-	/**
-	 * Gets the part of this port range above the given port or {@code null} if none.
-	 */
-	Port splitAbove(int above) {
-		int newFrom = Math.max(from, above + 1);
-		if(newFrom <= to) return new Port(protocol, newFrom, to);
-		else return null;
+	private SEManagePort() {
 	}
 }
