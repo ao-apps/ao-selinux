@@ -23,6 +23,7 @@
 package com.aoindustries.selinux;
 
 import com.aoindustries.lang.NullArgumentException;
+import com.aoindustries.net.Protocol;
 import com.aoindustries.util.ComparatorUtils;
 import com.aoindustries.util.WrappedException;
 import java.io.BufferedReader;
@@ -32,6 +33,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -92,20 +94,20 @@ public class Port implements Comparable<Port> {
 	static {
 		SortedMap<Port, String> newMap = new TreeMap<Port, String>();
 		// tcp/udp: 1-511: reserved_port_t
-		newMap.put(new Port(Protocol.tcp, 1, 511), "reserved_port_t");
-		newMap.put(new Port(Protocol.udp, 1, 511), "reserved_port_t");
+		newMap.put(new Port(Protocol.TCP, 1, 511), "reserved_port_t");
+		newMap.put(new Port(Protocol.UDP, 1, 511), "reserved_port_t");
 		// tcp/udp: 512-1023: hi_reserved_port_t
-		newMap.put(new Port(Protocol.tcp, 512, 1023), "hi_reserved_port_t");
-		newMap.put(new Port(Protocol.udp, 512, 1023), "hi_reserved_port_t");
+		newMap.put(new Port(Protocol.TCP, 512, 1023), "hi_reserved_port_t");
+		newMap.put(new Port(Protocol.UDP, 512, 1023), "hi_reserved_port_t");
 		// tcp/udp: 1024-32767: unreserved_port_t
-		newMap.put(new Port(Protocol.tcp, 1024, 32767), "unreserved_port_t");
-		newMap.put(new Port(Protocol.udp, 1024, 32767), "unreserved_port_t");
+		newMap.put(new Port(Protocol.TCP, 1024, 32767), "unreserved_port_t");
+		newMap.put(new Port(Protocol.UDP, 1024, 32767), "unreserved_port_t");
 		// tcp/udp: 32768-61000: ephemeral_port_t
-		newMap.put(new Port(Protocol.tcp, 32768, 61000), "ephemeral_port_t");
-		newMap.put(new Port(Protocol.udp, 32768, 61000), "ephemeral_port_t");
+		newMap.put(new Port(Protocol.TCP, 32768, 61000), "ephemeral_port_t");
+		newMap.put(new Port(Protocol.UDP, 32768, 61000), "ephemeral_port_t");
 		// tcp/udp: 61001-65535: unreserved_port_t
-		newMap.put(new Port(Protocol.tcp, 61001, 65535), "unreserved_port_t");
-		newMap.put(new Port(Protocol.udp, 61001, 65535), "unreserved_port_t");
+		newMap.put(new Port(Protocol.TCP, 61001, 65535), "unreserved_port_t");
+		newMap.put(new Port(Protocol.UDP, 61001, 65535), "unreserved_port_t");
 		assert assertNoOverlaps(newMap);
 		defaultPolicyExtensions = Collections.unmodifiableSortedMap(newMap);
 	}
@@ -210,7 +212,7 @@ public class Port implements Comparable<Port> {
 		assert assertNoOverlaps(policy);
 		SortedMap<Port, String> result = new TreeMap<Port, String>();
 		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
-		for(Protocol protocol : Protocol.values()) {
+		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
 			Port lastPort = null;
 			String lastType = null;
 			for(Map.Entry<? extends Port, String> entry : policy.entrySet()) {
@@ -246,7 +248,7 @@ public class Port implements Comparable<Port> {
 		assert assertNoOverlaps(ports);
 		SortedSet<Port> result = new TreeSet<Port>();
 		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
-		for(Protocol protocol : Protocol.values()) {
+		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
 			Port lastPort = null;
 			for(Port port : ports) {
 				if(protocol == port.getProtocol()) {
@@ -286,7 +288,7 @@ public class Port implements Comparable<Port> {
 				if(!matcher.find()) throw new IOException("Line not matched: " + line);
 				assert matcher.groupCount() == 3;
 				String type = matcher.group(1).intern();
-				Protocol protocol = Protocol.valueOf(matcher.group(2));
+				Protocol protocol = Protocol.valueOf(matcher.group(2).toUpperCase(Locale.ROOT));
 				boolean foundPortRange = false;
 				StringTokenizer tokens = new StringTokenizer(matcher.group(3), ", ");
 				while(tokens.hasMoreTokens()) {
@@ -507,7 +509,7 @@ public class Port implements Comparable<Port> {
 		SEManage.execSemanage(
 			"port", "-a",
 			"-t", type,
-			"-p", port.getProtocol().toString(),
+			"-p", port.getProtocol().name().toLowerCase(Locale.ROOT),
 			port.getPortRange()
 		);
 	}
@@ -522,7 +524,7 @@ public class Port implements Comparable<Port> {
 		SEManage.execSemanage(
 			"port", "-m",
 			"-t", type,
-			"-p", port.getProtocol().toString(),
+			"-p", port.getProtocol().name().toLowerCase(Locale.ROOT),
 			port.getPortRange()
 		);
 	}
@@ -535,7 +537,7 @@ public class Port implements Comparable<Port> {
 		SEManage.execSemanage(
 			"port", "-d",
 			"-t", type,
-			"-p", port.getProtocol().toString(),
+			"-p", port.getProtocol().name().toLowerCase(Locale.ROOT),
 			port.getPortRange()
 		);
 	}

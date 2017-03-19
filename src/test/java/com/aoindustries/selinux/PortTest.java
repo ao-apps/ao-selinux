@@ -1,6 +1,7 @@
 package com.aoindustries.selinux;
 
 import com.aoindustries.io.IoUtils;
+import com.aoindustries.net.Protocol;
 import com.aoindustries.nio.charset.Charsets;
 import com.aoindustries.util.AoCollections;
 import java.io.IOException;
@@ -61,8 +62,8 @@ public class PortTest {
 			AoCollections.emptySortedSet(),
 			Port.findOverlaps(
 				Arrays.asList(
-					new Port(Protocol.tcp, 10),
-					new Port(Protocol.udp, 10)
+					new Port(Protocol.TCP, 10),
+					new Port(Protocol.UDP, 10)
 				)
 			)
 		);
@@ -72,13 +73,13 @@ public class PortTest {
 	public void testFindOverlaps2() {
 		assertEquals(
 			AoCollections.singletonSortedSet(
-				new Port(Protocol.tcp, 10)
+				new Port(Protocol.TCP, 10)
 			),
 			Port.findOverlaps(
 				Arrays.asList(
-					new Port(Protocol.tcp, 10),
-					new Port(Protocol.udp, 10),
-					new Port(Protocol.tcp, 10)
+					new Port(Protocol.TCP, 10),
+					new Port(Protocol.UDP, 10),
+					new Port(Protocol.TCP, 10)
 				)
 			)
 		);
@@ -89,15 +90,15 @@ public class PortTest {
 		assertEquals(
 			new TreeSet<Port>(
 				Arrays.asList(
-					new Port(Protocol.tcp, 10),
-					new Port(Protocol.tcp, 1, 10)
+					new Port(Protocol.TCP, 10),
+					new Port(Protocol.TCP, 1, 10)
 				)
 			),
 			Port.findOverlaps(
 				Arrays.asList(
-					new Port(Protocol.tcp, 10),
-					new Port(Protocol.udp, 10),
-					new Port(Protocol.tcp, 1, 10)
+					new Port(Protocol.TCP, 10),
+					new Port(Protocol.UDP, 10),
+					new Port(Protocol.TCP, 1, 10)
 				)
 			)
 		);
@@ -107,20 +108,20 @@ public class PortTest {
 	public void testParseList() throws IOException {
 		SortedMap<Port, String> expected = new TreeMap<Port, String>();
 		// afs3_callback_port_t           tcp      7001
-		expected.put(new Port(Protocol.tcp, 7001), "afs3_callback_port_t");
+		expected.put(new Port(Protocol.TCP, 7001), "afs3_callback_port_t");
 		// afs3_callback_port_t           udp      7001
-		expected.put(new Port(Protocol.udp, 7001), "afs3_callback_port_t");
+		expected.put(new Port(Protocol.UDP, 7001), "afs3_callback_port_t");
 		// afs_fs_port_t                  udp      7000, 7005
-		expected.put(new Port(Protocol.udp, 7000), "afs_fs_port_t");
-		expected.put(new Port(Protocol.udp, 7005), "afs_fs_port_t");
+		expected.put(new Port(Protocol.UDP, 7000), "afs_fs_port_t");
+		expected.put(new Port(Protocol.UDP, 7005), "afs_fs_port_t");
 		// amanda_port_t                  tcp      10080-10083
-		expected.put(new Port(Protocol.tcp, 10080, 10083), "amanda_port_t");
+		expected.put(new Port(Protocol.TCP, 10080, 10083), "amanda_port_t");
 		// amanda_port_t                  udp      10080-10082
-		expected.put(new Port(Protocol.udp, 10080, 10082), "amanda_port_t");
+		expected.put(new Port(Protocol.UDP, 10080, 10082), "amanda_port_t");
 		// ssh_port_t                     tcp      22
-		expected.put(new Port(Protocol.tcp, 22), "ssh_port_t");
+		expected.put(new Port(Protocol.TCP, 22), "ssh_port_t");
 		// zope_port_t                    tcp      8021
-		expected.put(new Port(Protocol.tcp, 8021), "zope_port_t");
+		expected.put(new Port(Protocol.TCP, 8021), "zope_port_t");
 		assertEquals(
 			expected,
 			Port.parseList(testDataSimpleSubset, null)
@@ -131,8 +132,8 @@ public class PortTest {
 	public void testParseLocalPolicy() throws IOException {
 		SortedMap<Port, String> expected = new TreeMap<Port, String>();
 		// ssh_port_t                     tcp      8991, 8008
-		expected.put(new Port(Protocol.tcp, 8991), "ssh_port_t");
-		expected.put(new Port(Protocol.tcp, 8008), "ssh_port_t");
+		expected.put(new Port(Protocol.TCP, 8991), "ssh_port_t");
+		expected.put(new Port(Protocol.TCP, 8008), "ssh_port_t");
 		assertEquals(
 			expected,
 			Port.parseLocalPolicy(testDataLocalWithModified8008)
@@ -154,7 +155,7 @@ public class PortTest {
 		// Make sure the default policy is used for port 8080
 		assertEquals(
 			"http_port_t",
-			defaultPolicy.get(new Port(Protocol.tcp, 8008))
+			defaultPolicy.get(new Port(Protocol.TCP, 8008))
 		);
 	}
 
@@ -166,7 +167,7 @@ public class PortTest {
 		// Make sure the local policy is used for port 8080
 		assertEquals(
 			"ssh_port_t",
-			policy.get(new Port(Protocol.tcp, 8008))
+			policy.get(new Port(Protocol.TCP, 8008))
 		);
 	}
 
@@ -175,7 +176,7 @@ public class PortTest {
 		SortedMap<Port, String> localPolicy = Port.parseLocalPolicy(testDataLocalWithModified8008);
 		SortedMap<Port, String> defaultPolicy = Port.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
 		SortedMap<Port, String> policy = Port.parsePolicy(localPolicy, defaultPolicy);
-		for(Protocol protocol : Protocol.values()) {
+		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
 			Port lastPort = null;
 			for(Port port : policy.keySet()) {
 				if(port.getProtocol() == protocol) {
@@ -209,7 +210,7 @@ public class PortTest {
 		SortedMap<Port, String> localPolicy = Port.parseLocalPolicy(testDataLocalWithModified8008);
 		SortedMap<Port, String> defaultPolicy = Port.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
 		SortedMap<Port, String> policy = Port.parsePolicy(localPolicy, defaultPolicy);
-		for(Protocol protocol : Protocol.values()) {
+		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
 			Port lastPort = null;
 			String lastType = null;
 			for(Map.Entry<Port, String> entry: policy.entrySet()) {
@@ -232,98 +233,98 @@ public class PortTest {
 		}
 		assertEquals(
 			"saphostctrl_port_t",
-			policy.get(new Port(Protocol.tcp, 1128, 1129))
+			policy.get(new Port(Protocol.TCP, 1128, 1129))
 		);
 	}
 
 	@Test
 	public void testToString1() {
 		assertEquals(
-			"1-65535/udp",
-			new Port(Protocol.udp, 1, 65535).toString()
+			"1-65535/UDP",
+			new Port(Protocol.UDP, 1, 65535).toString()
 		);
 	}
 
 	@Test
 	public void testToString2() {
 		assertEquals(
-			"167/tcp",
-			new Port(Protocol.tcp, 167).toString()
+			"167/TCP",
+			new Port(Protocol.TCP, 167).toString()
 		);
 	}
 
 	@Test
 	public void testToString3() {
 		assertEquals(
-			"67/udp",
-			new Port(Protocol.udp, 67, 67).toString()
+			"67/UDP",
+			new Port(Protocol.UDP, 67, 67).toString()
 		);
 	}
 
 	public void testPortRangeMinFrom() throws IOException {
 		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			new Port(Protocol.tcp, 1, 10)
+			new Port(Protocol.TCP, 1, 10)
 		);
 	}
 
 	public void testPortRangeMaxFrom() throws IOException {
 		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			new Port(Protocol.tcp, 65535, 65535)
+			new Port(Protocol.TCP, 65535, 65535)
 		);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortRangeLowFrom() throws IOException {
 		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			new Port(Protocol.tcp, 0, 10)
+			new Port(Protocol.TCP, 0, 10)
 		);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortRangeHighFrom() throws IOException {
 		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			new Port(Protocol.tcp, 65536, 10)
+			new Port(Protocol.TCP, 65536, 10)
 		);
 	}
 
 	public void testPortRangeMinTo() throws IOException {
 		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			new Port(Protocol.tcp, 1, 1)
+			new Port(Protocol.TCP, 1, 1)
 		);
 	}
 
 	public void testPortRangeMaxTo() throws IOException {
 		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			new Port(Protocol.tcp, 10, 65535)
+			new Port(Protocol.TCP, 10, 65535)
 		);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortRangeLowTo() throws IOException {
 		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			new Port(Protocol.tcp, 10, 0)
+			new Port(Protocol.TCP, 10, 0)
 		);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortRangeHighTo() throws IOException {
 		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			new Port(Protocol.tcp, 10, 65536)
+			new Port(Protocol.TCP, 10, 65536)
 		);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPortRangeFromBiggerTo() throws IOException {
 		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			new Port(Protocol.tcp, 10, 1)
+			new Port(Protocol.TCP, 10, 1)
 		);
 	}
 
 	@Test
 	public void testCompareTo1() {
 		assertTrue(
-			new Port(Protocol.tcp, 1).compareTo(
-				new Port(Protocol.tcp, 1)
+			new Port(Protocol.TCP, 1).compareTo(
+				new Port(Protocol.TCP, 1)
 			)
 			== 0
 		);
@@ -332,8 +333,8 @@ public class PortTest {
 	@Test
 	public void testCompareTo2() {
 		assertTrue(
-			new Port(Protocol.tcp, 1).compareTo(
-				new Port(Protocol.tcp, 1, 2)
+			new Port(Protocol.TCP, 1).compareTo(
+				new Port(Protocol.TCP, 1, 2)
 			)
 			< 0
 		);
@@ -342,8 +343,8 @@ public class PortTest {
 	@Test
 	public void testCompareTo3() {
 		assertTrue(
-			new Port(Protocol.tcp, 1).compareTo(
-				new Port(Protocol.udp, 1)
+			new Port(Protocol.TCP, 1).compareTo(
+				new Port(Protocol.UDP, 1)
 			)
 			< 0
 		);
@@ -353,8 +354,8 @@ public class PortTest {
 	public void testCompareTo4() {
 		assertTrue(
 			"Detected from sorting before to",
-			new Port(Protocol.tcp, 10, 15).compareTo(
-				new Port(Protocol.tcp, 11, 14)
+			new Port(Protocol.TCP, 10, 15).compareTo(
+				new Port(Protocol.TCP, 11, 14)
 			)
 			< 0
 		);
@@ -364,7 +365,7 @@ public class PortTest {
 	public void testGetPortRange1() {
 		assertEquals(
 			"1-65535",
-			new Port(Protocol.udp, 1, 65535).getPortRange()
+			new Port(Protocol.UDP, 1, 65535).getPortRange()
 		);
 	}
 
@@ -372,7 +373,7 @@ public class PortTest {
 	public void testGetPortRange2() {
 		assertEquals(
 			"167",
-			new Port(Protocol.tcp, 167).getPortRange()
+			new Port(Protocol.TCP, 167).getPortRange()
 		);
 	}
 
@@ -380,15 +381,15 @@ public class PortTest {
 	public void testGetPortRange3() {
 		assertEquals(
 			"67",
-			new Port(Protocol.udp, 67, 67).getPortRange()
+			new Port(Protocol.UDP, 67, 67).getPortRange()
 		);
 	}
 
 	@Test
 	public void testOverlaps1() {
 		assertTrue(
-			new Port(Protocol.udp, 10).overlaps(
-				new Port(Protocol.udp, 10)
+			new Port(Protocol.UDP, 10).overlaps(
+				new Port(Protocol.UDP, 10)
 			)
 		);
 	}
@@ -396,8 +397,8 @@ public class PortTest {
 	@Test
 	public void testOverlaps2() {
 		assertFalse(
-			new Port(Protocol.tcp, 10).overlaps(
-				new Port(Protocol.udp, 10)
+			new Port(Protocol.TCP, 10).overlaps(
+				new Port(Protocol.UDP, 10)
 			)
 		);
 	}
@@ -405,8 +406,8 @@ public class PortTest {
 	@Test
 	public void testOverlaps3() {
 		assertTrue(
-			new Port(Protocol.tcp, 5, 10).overlaps(
-				new Port(Protocol.tcp, 10)
+			new Port(Protocol.TCP, 5, 10).overlaps(
+				new Port(Protocol.TCP, 10)
 			)
 		);
 	}
@@ -414,8 +415,8 @@ public class PortTest {
 	@Test
 	public void testOverlaps4() {
 		assertTrue(
-			new Port(Protocol.tcp, 5, 10).overlaps(
-				new Port(Protocol.tcp, 5)
+			new Port(Protocol.TCP, 5, 10).overlaps(
+				new Port(Protocol.TCP, 5)
 			)
 		);
 	}
@@ -423,8 +424,8 @@ public class PortTest {
 	@Test
 	public void testOverlaps5() {
 		assertFalse(
-			new Port(Protocol.tcp, 5).overlaps(
-				new Port(Protocol.tcp, 11)
+			new Port(Protocol.TCP, 5).overlaps(
+				new Port(Protocol.TCP, 11)
 			)
 		);
 	}
@@ -432,8 +433,8 @@ public class PortTest {
 	@Test
 	public void testOverlaps6() {
 		assertFalse(
-			new Port(Protocol.tcp, 5, 10).overlaps(
-				new Port(Protocol.tcp, 11)
+			new Port(Protocol.TCP, 5, 10).overlaps(
+				new Port(Protocol.TCP, 11)
 			)
 		);
 	}
@@ -441,8 +442,8 @@ public class PortTest {
 	@Test
 	public void testOverlaps7() {
 		assertFalse(
-			new Port(Protocol.tcp, 5, 10).overlaps(
-				new Port(Protocol.tcp, 4)
+			new Port(Protocol.TCP, 5, 10).overlaps(
+				new Port(Protocol.TCP, 4)
 			)
 		);
 	}
@@ -450,8 +451,8 @@ public class PortTest {
 	@Test
 	public void testOverlaps8() {
 		assertTrue(
-			new Port(Protocol.tcp, 5, 10).overlaps(
-				new Port(Protocol.tcp, 1, 5)
+			new Port(Protocol.TCP, 5, 10).overlaps(
+				new Port(Protocol.TCP, 1, 5)
 			)
 		);
 	}
@@ -459,8 +460,8 @@ public class PortTest {
 	@Test
 	public void testOverlaps9() {
 		assertTrue(
-			new Port(Protocol.tcp, 5, 10).overlaps(
-				new Port(Protocol.tcp, 10, 15)
+			new Port(Protocol.TCP, 5, 10).overlaps(
+				new Port(Protocol.TCP, 10, 15)
 			)
 		);
 	}
@@ -468,8 +469,8 @@ public class PortTest {
 	@Test
 	public void testOverlaps10() {
 		assertFalse(
-			new Port(Protocol.tcp, 5, 10).overlaps(
-				new Port(Protocol.tcp, 1, 4)
+			new Port(Protocol.TCP, 5, 10).overlaps(
+				new Port(Protocol.TCP, 1, 4)
 			)
 		);
 	}
@@ -477,8 +478,8 @@ public class PortTest {
 	@Test
 	public void testOverlaps11() {
 		assertFalse(
-			new Port(Protocol.tcp, 5, 10).overlaps(
-				new Port(Protocol.tcp, 11, 15)
+			new Port(Protocol.TCP, 5, 10).overlaps(
+				new Port(Protocol.TCP, 11, 15)
 			)
 		);
 	}
