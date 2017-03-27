@@ -32,13 +32,22 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		title="@{documented.name}"
 		description="@{documented.description}"
 		datePublished="2017-03-12T18:31:26-0500"
-		dateModified="2017-03-16T22:59:43-0500"
+		dateModified="2017-03-26T22:47:10-0500"
 	>
 		<core:child page="changelog.jspx" />
 		<core:child page="apidocs/index.jspx" />
 		<p>
 			@{documented.description}
 		</p>
+		<section:section label="Project Links">
+			<ul>
+				<li><core:link page="index.jspx">Project Home</core:link></li>
+				<li><core:link page="changelog.jspx">Changelog</core:link></li>
+				<li><core:link page="apidocs/index.jspx">API Docs</core:link></li>
+				<li><ao:a href="https://search.maven.org/#search%7Cgav%7C1%7Cg:%22@{documented.groupId}%22%20AND%20a:%22@{documented.artifactId}%22">Maven Central Repository</ao:a></li>
+				<li><ao:a href="@{documented.scm.url}">GitHub</ao:a></li>
+			</ul>
+		</section:section>
 		<section:section label="Features">
 			<ul>
 				<li>Clean programmatic access to <ao:a href="https://fedoraproject.org/wiki/SELinux/semanage">semanage</ao:a>.</li>
@@ -69,15 +78,6 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 				<ao:a href="http://search.maven.org/#search%7Cga%7C1%7Cselinux">The Central Repository</ao:a>,
 				or <ao:a href="https://www.google.com/search?q=java+api+for+selinux">Google Search</ao:a>.
 			</p>
-		</section:section>
-		<section:section label="Project Links">
-			<ul>
-				<li><core:link page="index.jspx">Project Home</core:link></li>
-				<li><core:link page="changelog.jspx">Changelog</core:link></li>
-				<li><core:link page="apidocs/index.jspx">API Docs</core:link></li>
-				<li><ao:a href="https://search.maven.org/#search%7Cgav%7C1%7Cg:%22@{documented.groupId}%22%20AND%20a:%22@{documented.artifactId}%22">Maven Central Repository</ao:a></li>
-				<li><ao:a href="@{documented.scm.url}">GitHub</ao:a></li>
-			</ul>
 		</section:section>
 	</core:page>
 </jsp:root>
