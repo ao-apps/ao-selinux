@@ -232,6 +232,7 @@ public class SEManagePort {
 	 * @return the modifiable map of coalesced port ranges.
 	 */
 	private static SortedMap<IPortRange, String> coalesce(SortedMap<? extends IPortRange, String> policy) {
+		// TODO: Is there any ordering that can confuse this, like 1, 3, 2, or 1-3, 2-4, 3-5?
 		assert assertNoOverlaps(policy);
 		SortedMap<IPortRange, String> result = new TreeMap<IPortRange, String>();
 		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
@@ -274,6 +275,7 @@ public class SEManagePort {
 	 * @return the modifiable set of coalesced port ranges.
 	 */
 	private static SortedSet<IPortRange> coalesce(SortedSet<? extends IPortRange> portRanges) {
+		// TODO: Is there any ordering that can confuse this, like 1, 3, 2, or 1-3, 2-4, 3-5?
 		assert assertNoOverlaps(portRanges);
 		SortedSet<IPortRange> result = new TreeSet<IPortRange>();
 		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
@@ -429,6 +431,7 @@ public class SEManagePort {
 		Iterator<Map.Entry<IPortRange, String>> entryIter = policy.entrySet().iterator();
 		Map<IPortRange, String> toAdd = new HashMap<IPortRange, String>();
 		while(entryIter.hasNext()) {
+			// TODO: Is there any ordering that can confuse this, like 1, 3, 2, or 1-3, 2-4, 3-5?
 			Map.Entry<IPortRange, String> existingEntry = entryIter.next();
 			IPortRange existingPortRange = existingEntry.getKey();
 			if(existingPortRange.getFrom() > portRange.getTo()) {
