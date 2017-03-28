@@ -19,14 +19,17 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-// TODO: Move these these to ao-net-types as appropriate
+
+/**
+ * @see  SEManagePort
+ *
+ * @author  AO Industries, Inc.
+ */
 public class SEManagePortTest {
 	
 	private static String loadResource(String resource) throws IOException {
@@ -243,130 +246,6 @@ public class SEManagePortTest {
 	}
 
 	@Test
-	public void testToString1() throws ValidationException {
-		assertEquals(
-			"1-65535/UDP",
-			PortRange.valueOf(1, 65535, Protocol.UDP).toString()
-		);
-	}
-
-	@Test
-	public void testToString2() throws ValidationException {
-		assertEquals(
-			"167/TCP",
-			Port.valueOf(167, Protocol.TCP).toString()
-		);
-	}
-
-	@Test
-	public void testToString3() throws ValidationException {
-		assertEquals(
-			"67/UDP",
-			Port.valueOf(67, Protocol.UDP).toString()
-		);
-	}
-
-	public void testPortRangeMinFrom() throws IOException, ValidationException {
-		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			PortRange.valueOf(1, 10, Protocol.TCP)
-		);
-	}
-
-	public void testPortRangeMaxFrom() throws IOException, ValidationException {
-		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			Port.valueOf(65535, Protocol.TCP)
-		);
-	}
-
-	@Test(expected = ValidationException.class)
-	public void testPortRangeLowFrom() throws IOException, ValidationException {
-		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			PortRange.valueOf(0, 10, Protocol.TCP)
-		);
-	}
-
-	@Test(expected = ValidationException.class)
-	public void testPortRangeHighFrom() throws IOException, ValidationException {
-		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			PortRange.valueOf(65536, 10, Protocol.TCP)
-		);
-	}
-
-	public void testPortRangeMinTo() throws IOException, ValidationException {
-		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			Port.valueOf(1, Protocol.TCP)
-		);
-	}
-
-	public void testPortRangeMaxTo() throws IOException, ValidationException {
-		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			PortRange.valueOf(10, 65535, Protocol.TCP)
-		);
-	}
-
-	@Test(expected = ValidationException.class)
-	public void testPortRangeLowTo() throws IOException, ValidationException {
-		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			PortRange.valueOf(10, 0, Protocol.TCP)
-		);
-	}
-
-	@Test(expected = ValidationException.class)
-	public void testPortRangeHighTo() throws IOException, ValidationException {
-		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			PortRange.valueOf(10, 65536, Protocol.TCP)
-		);
-	}
-
-	@Test(expected = ValidationException.class)
-	public void testPortRangeFromBiggerTo() throws IOException, ValidationException {
-		assertNotNull( // Using this assertion to avoid editor warnings about return value not used
-			PortRange.valueOf(10, 1, Protocol.TCP)
-		);
-	}
-
-	@Test
-	public void testCompareTo1() throws ValidationException {
-		assertTrue(
-			Port.valueOf(1, Protocol.TCP).compareTo(
-				Port.valueOf(1, Protocol.TCP)
-			)
-			== 0
-		);
-	}
-
-	@Test
-	public void testCompareTo2() throws ValidationException {
-		assertTrue(
-			Port.valueOf(1, Protocol.TCP).compareTo(
-				PortRange.valueOf(1, 2, Protocol.TCP)
-			)
-			< 0
-		);
-	}
-
-	@Test
-	public void testCompareTo3() throws ValidationException {
-		assertTrue(
-			Port.valueOf(1, Protocol.TCP).compareTo(
-				Port.valueOf(1, Protocol.UDP)
-			)
-			< 0
-		);
-	}
-
-	@Test
-	public void testCompareTo4() throws ValidationException {
-		assertTrue(
-			"Detected from sorting before to",
-			PortRange.valueOf(10, 15, Protocol.TCP).compareTo(
-				PortRange.valueOf(11, 14, Protocol.TCP)
-			)
-			< 0
-		);
-	}
-
-	@Test
 	public void testGetPortRange1() throws ValidationException {
 		assertEquals(
 			"1-65535",
@@ -387,105 +266,6 @@ public class SEManagePortTest {
 		assertEquals(
 			"67",
 			SEManagePort.getPortRange(Port.valueOf(67, Protocol.UDP))
-		);
-	}
-
-	@Test
-	public void testOverlaps1() throws ValidationException {
-		assertTrue(
-			Port.valueOf(10, Protocol.UDP).overlaps(
-				Port.valueOf(10, Protocol.UDP)
-			)
-		);
-	}
-
-	@Test
-	public void testOverlaps2() throws ValidationException {
-		assertFalse(
-			Port.valueOf(10, Protocol.TCP).overlaps(
-				Port.valueOf(10, Protocol.UDP)
-			)
-		);
-	}
-
-	@Test
-	public void testOverlaps3() throws ValidationException {
-		assertTrue(
-			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				Port.valueOf(10, Protocol.TCP)
-			)
-		);
-	}
-
-	@Test
-	public void testOverlaps4() throws ValidationException {
-		assertTrue(
-			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				Port.valueOf(5, Protocol.TCP)
-			)
-		);
-	}
-
-	@Test
-	public void testOverlaps5() throws ValidationException {
-		assertFalse(
-			Port.valueOf(5, Protocol.TCP).overlaps(
-				Port.valueOf(11, Protocol.TCP)
-			)
-		);
-	}
-
-	@Test
-	public void testOverlaps6() throws ValidationException {
-		assertFalse(
-			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				Port.valueOf(11, Protocol.TCP)
-			)
-		);
-	}
-
-	@Test
-	public void testOverlaps7() throws ValidationException {
-		assertFalse(
-			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				Port.valueOf(4, Protocol.TCP)
-			)
-		);
-	}
-
-	@Test
-	public void testOverlaps8() throws ValidationException {
-		assertTrue(
-			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				PortRange.valueOf(1, 5, Protocol.TCP)
-			)
-		);
-	}
-
-	@Test
-	public void testOverlaps9() throws ValidationException {
-		assertTrue(
-			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				PortRange.valueOf(10, 15, Protocol.TCP)
-			)
-		);
-	}
-
-	@Test
-	public void testOverlaps10() throws ValidationException {
-		assertFalse(
-			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				PortRange.valueOf(1, 4, Protocol.TCP)
-			)
-		);
-	}
-
-	@Test
-	public void testOverlaps11() throws ValidationException {
-		assertFalse(
-			PortRange.valueOf(5, 10, Protocol.TCP).overlaps(
-				PortRange.valueOf(11, 15, Protocol.TCP)
-			)
 		);
 	}
 }
