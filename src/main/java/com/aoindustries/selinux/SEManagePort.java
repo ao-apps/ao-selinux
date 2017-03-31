@@ -116,9 +116,7 @@ public class SEManagePort {
 			assert assertNoOverlaps(newMap);
 			defaultPolicyExtensions = Collections.unmodifiableSortedMap(newMap);
 		} catch(ValidationException e) {
-			AssertionError ae = new AssertionError();
-			ae.initCause(e);
-			throw ae;
+			throw new AssertionError(e);
 		}
 	}
 
@@ -252,9 +250,7 @@ public class SEManagePort {
 						try {
 							portRange = IPortRange.valueOf(lastPortRange.getFrom(), portRange.getTo(), protocol);
 						} catch(ValidationException e) {
-							AssertionError ae = new AssertionError();
-							ae.initCause(e);
-							throw ae;
+							throw new AssertionError(e);
 						}
 					}
 					result.put(portRange, type);
@@ -291,9 +287,7 @@ public class SEManagePort {
 						try {
 							portRange = IPortRange.valueOf(lastPortRange.getFrom(), portRange.getTo(), protocol);
 						} catch(ValidationException e) {
-							AssertionError ae = new AssertionError();
-							ae.initCause(e);
-							throw ae;
+							throw new AssertionError(e);
 						}
 					}
 					result.add(portRange);
