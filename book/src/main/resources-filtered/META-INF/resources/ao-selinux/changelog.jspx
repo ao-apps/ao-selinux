@@ -36,7 +36,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		shortTitle="Changelog"
 		tocLevels="1"
 		datePublished="2017-03-10T14:04:26-0600"
-		dateModified="2017-07-13T18:37:23-0500"
+		dateModified="2017-07-20T03:22:11-0500"
 	>
 		<!-- The current snapshot, unreleased version -->
 		<c:set var="version" value="@{com.aoindustries:ao-selinux:pom.version}" />
@@ -51,14 +51,23 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 				groupId="@{documented.groupId}"
 				artifactId="@{documented.artifactId}"
 				scmUrl="@{documented.scm.url}"
-			>
-				<ul>
-					<li>New Java API for managing Security-Enhanced Linux (SELinux).</li>
-					<li>Added support for <code>semanage port</code> commands.</li>
-					<li>Using <code>Protocol</code> class from new <core:link book="/ao-net-types" page="/index.jspx" /> project.</li>
-					<li>Updated dependencies.</li>
-				</ul>
-			</changelog:release>
+			/>
 		</c:if>
+
+		<changelog:release
+			projectName="@{documented.name}"
+			version="1.0.0"
+			datePublished="2017-07-20T03:22:11-0500"
+			groupId="@{documented.groupId}"
+			artifactId="@{documented.artifactId}"
+			scmUrl="@{documented.scm.url}"
+		>
+			<ul>
+				<li>New Java API for managing Security-Enhanced Linux (SELinux).</li>
+				<li>Added support for <code>semanage port</code> commands.</li>
+				<li>Using <code>Protocol</code> class from new <core:link book="/ao-net-types" page="/index.jspx" /> project.</li>
+				<li>Updated dependencies.</li>
+			</ul>
+		</changelog:release>
 	</core:page>
 </jsp:root>

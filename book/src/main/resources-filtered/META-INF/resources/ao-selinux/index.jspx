@@ -32,7 +32,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		title="@{documented.name}"
 		description="@{documented.description}"
 		datePublished="2017-03-12T18:31:26-0500"
-		dateModified="2017-07-18T18:57:31-0500"
+		dateModified="2017-07-20T03:22:11-0500"
 	>
 		<core:child page="changelog.jspx" />
 		<core:child page="apidocs/index.jspx" />
