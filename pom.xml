@@ -27,13 +27,13 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 	<parent>
 		<groupId>com.aoindustries</groupId>
 		<artifactId>ao-oss-parent</artifactId>
-		<version>1.0.3</version>
+		<version>1.0.4-validation-SNAPSHOT</version>
 		<relativePath>../ao-oss-parent/pom.xml</relativePath>
 	</parent>
 
 	<groupId>com.aoindustries</groupId>
 	<artifactId>ao-selinux</artifactId>
-	<version>1.0.1-SNAPSHOT</version>
+	<version>1.0.1-validation-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>AO SELinux</name>
@@ -80,12 +80,12 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		<dependency>
 			<groupId>com.aoindustries</groupId>
 			<artifactId>ao-lang</artifactId>
-			<version>1.0.0</version>
+			<version>1.0.1-validation-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>com.aoindustries</groupId>
 			<artifactId>ao-net-types</artifactId>
-			<version>1.0.0</version>
+			<version>1.0.1-validation-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 </project>
