@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
-Copyright (C) 2017  AO Industries, Inc.
+Copyright (C) 2017, 2018  AO Industries, Inc.
     support@aoindustries.com
     7262 Bull Pen Cir
     Mobile, AL 36695
@@ -37,7 +37,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		shortTitle="Changelog"
 		tocLevels="1"
 		datePublished="2017-03-10T14:04:26-0600"
-		dateModified="2017-07-20T03:22:11-0500"
+		dateModified="2018-12-05T04:54:09-0600"
 	>
 		<!-- The current snapshot, unreleased version -->
 		<c:set var="version" value="@{com.aoindustries:ao-selinux:pom.version}" />
@@ -52,7 +52,11 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 				groupId="@{documented.groupId}"
 				artifactId="@{documented.artifactId}"
 				scmUrl="@{documented.scm.url}"
-			/>
+			>
+				<ul>
+					<li>Added support for SCTP, since SELinux policies in RedHat 7.6 includes SCTP (see <code>sudo semanage port -l | grep sctp</code>.</li>
+				</ul>
+			</changelog:release>
 		</c:if>
 
 		<changelog:release

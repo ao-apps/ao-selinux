@@ -129,6 +129,7 @@ gpsd_port_t                    tcp      2947
 hadoop_datanode_port_t         tcp      50010
 hadoop_namenode_port_t         tcp      8020
 hddtemp_port_t                 tcp      7634
+hi_reserved_port_t             sctp     512-1023
 hi_reserved_port_t             tcp      512-1023
 hi_reserved_port_t             udp      512-1023
 howl_port_t                    tcp      5335
@@ -360,6 +361,7 @@ trisoap_port_t                 tcp      10200
 trisoap_port_t                 udp      10200
 trivnet1_port_t                tcp      8200
 trivnet1_port_t                udp      8200
+unreserved_port_t              sctp     1024-65535
 unreserved_port_t              tcp      61001-65535, 1024-32767
 unreserved_port_t              udp      61001-65535, 1024-32767
 ups_port_t                     tcp      3493

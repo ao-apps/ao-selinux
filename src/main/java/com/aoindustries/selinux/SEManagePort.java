@@ -1,6 +1,6 @@
 /*
  * ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
- * Copyright (C) 2017  AO Industries, Inc.
+ * Copyright (C) 2017, 2018  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -85,25 +85,29 @@ public class SEManagePort {
 	private static final Pattern listPattern = Pattern.compile("^(\\S+)\\s+(\\S+)\\s+(\\S.*)$");
 
 	/**
-	 * Default unreserved port ranges determined from <code>sepolicy network -p ...</code>:
+	 * Default unreserved port ranges determined from <code>sepolicy network -p ...</code>.
+	 * The following is as of RedHat 7.6:
 	 * <ol>
-	 * <li>tcp/udp: 1-511: reserved_port_t</li>
-	 * <li>tcp/udp: 512-1023: hi_reserved_port_t</li>
+	 * <li>tcp/udp/sctp: 1-511: reserved_port_t</li>
+	 * <li>tcp/udp/sctp: 512-1023: hi_reserved_port_t</li>
 	 * <li>tcp/udp: 1024-32767: unreserved_port_t</li>
 	 * <li>tcp/udp: 32768-61000: ephemeral_port_t</li>
 	 * <li>tcp/udp: 61001-65535: unreserved_port_t</li>
+	 * <li>sctp: 1024-65535: unreserved_port_t</li>
 	 * </ol>
 	 */
 	private static final SortedMap<PortRange, String> defaultPolicyExtensions;
 	static {
 		try {
 			SortedMap<PortRange, String> newMap = new TreeMap<PortRange, String>();
-			// tcp/udp: 1-511: reserved_port_t
+			// tcp/udp/sctp: 1-511: reserved_port_t
 			newMap.put(PortRange.valueOf(1, 511, Protocol.TCP), "reserved_port_t");
 			newMap.put(PortRange.valueOf(1, 511, Protocol.UDP), "reserved_port_t");
-			// tcp/udp: 512-1023: hi_reserved_port_t
+			newMap.put(PortRange.valueOf(1, 511, Protocol.SCTP), "reserved_port_t");
+			// tcp/udp/sctp: 512-1023: hi_reserved_port_t
 			newMap.put(PortRange.valueOf(512, 1023, Protocol.TCP), "hi_reserved_port_t");
 			newMap.put(PortRange.valueOf(512, 1023, Protocol.UDP), "hi_reserved_port_t");
+			newMap.put(PortRange.valueOf(512, 1023, Protocol.SCTP), "hi_reserved_port_t");
 			// tcp/udp: 1024-32767: unreserved_port_t
 			newMap.put(PortRange.valueOf(1024, 32767, Protocol.TCP), "unreserved_port_t");
 			newMap.put(PortRange.valueOf(1024, 32767, Protocol.UDP), "unreserved_port_t");
@@ -113,6 +117,8 @@ public class SEManagePort {
 			// tcp/udp: 61001-65535: unreserved_port_t
 			newMap.put(PortRange.valueOf(61001, 65535, Protocol.TCP), "unreserved_port_t");
 			newMap.put(PortRange.valueOf(61001, 65535, Protocol.UDP), "unreserved_port_t");
+			// sctp: 1024-65535: unreserved_port_t
+			newMap.put(PortRange.valueOf(1024, 65535, Protocol.SCTP), "unreserved_port_t");
 			assert assertNoOverlaps(newMap);
 			defaultPolicyExtensions = Collections.unmodifiableSortedMap(newMap);
 		} catch(ValidationException e) {
@@ -234,7 +240,7 @@ public class SEManagePort {
 		assert assertNoOverlaps(policy);
 		SortedMap<IPortRange, String> result = new TreeMap<IPortRange, String>();
 		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
-		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
+		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP, Protocol.SCTP}) {
 			IPortRange lastPortRange = null;
 			String lastType = null;
 			for(Map.Entry<? extends IPortRange, String> entry : policy.entrySet()) {
@@ -275,7 +281,7 @@ public class SEManagePort {
 		assert assertNoOverlaps(portRanges);
 		SortedSet<IPortRange> result = new TreeSet<IPortRange>();
 		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
-		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
+		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP, Protocol.SCTP}) {
 			IPortRange lastPortRange = null;
 			for(IPortRange portRange : portRanges) {
 				if(protocol == portRange.getProtocol()) {
@@ -454,7 +460,7 @@ public class SEManagePort {
 	 * Local policy takes precedence over default policy.
 	 * <p>
 	 * The default policy is extended, as needed, to include coverage for all ports from
-	 * 1 to 65535 for both tcp and udp.
+	 * 1 to 65535 for tcp, udp, and sctp.
 	 * </p>
 	 * <p>
 	 * Within the default policy, more specific ports will split more general ports, such as port
@@ -468,7 +474,7 @@ public class SEManagePort {
 	 * but are combined into 80-81/tcp for this view.
 	 * </p>
 	 *
-	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type, covering all ports 1 through 65535 in both tcp and udp, coalesced into minimum entries.
+	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type, covering all ports 1 through 65535 in tcp, udp, and sctp, coalesced into minimum entries.
 	 */
 	public static SortedMap<IPortRange,String> getPolicy() throws IOException {
 		SortedMap<IPortRange,String> localPolicy;
