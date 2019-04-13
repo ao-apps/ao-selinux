@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
-Copyright (C) 2017, 2018  AO Industries, Inc.
+Copyright (C) 2017, 2018, 2019  AO Industries, Inc.
     support@aoindustries.com
     7262 Bull Pen Cir
     Mobile, AL 36695
@@ -70,7 +70,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 			<ul>
 				<li>New Java API for managing Security-Enhanced Linux (SELinux).</li>
 				<li>Added support for <code>semanage port</code> commands.</li>
-				<li>Using <code>Protocol</code> class from new <core:link book="/ao-net-types" page="/" /> project.</li>
+				<li>Using <code>Protocol</code> class from new <core:link book="/ao-net-types" page="/index.jspx" /> project.</li>
 				<li>Updated dependencies.</li>
 			</ul>
 		</changelog:release>
