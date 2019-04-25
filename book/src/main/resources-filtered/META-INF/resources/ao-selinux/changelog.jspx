@@ -37,7 +37,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		shortTitle="Changelog"
 		tocLevels="1"
 		datePublished="2017-03-10T14:04:26-0600"
-		dateModified="2019-04-25T00:29:21-0500"
+		dateModified="2019-04-25T00:43:16-0500"
 	>
 		<!-- The current snapshot, unreleased version -->
 		<c:set var="version" value="@{com.aoindustries:ao-selinux:pom.version}" />
@@ -52,13 +52,22 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 				groupId="@{documented.groupId}"
 				artifactId="@{documented.artifactId}"
 				scmUrl="@{documented.scm.url}"
-			>
-				<ul>
-					<li>Minimum Java version changed from 1.6 to 1.7.</li>
-					<li>Added support for SCTP, since SELinux policies in RedHat 7.6 include SCTP (see <code>sudo semanage port -l | grep sctp</code>.</li>
-				</ul>
-			</changelog:release>
+			/>
 		</c:if>
+
+		<changelog:release
+			projectName="@{documented.name}"
+			version="1.1.0"
+			datePublished="2019-04-25T00:43:16-0500"
+			groupId="@{documented.groupId}"
+			artifactId="@{documented.artifactId}"
+			scmUrl="@{documented.scm.url}"
+		>
+			<ul>
+				<li>Minimum Java version changed from 1.6 to 1.7.</li>
+				<li>Added support for SCTP, since SELinux policies in RedHat 7.6 include SCTP (see <code>sudo semanage port -l | grep sctp</code>.</li>
+			</ul>
+		</changelog:release>
 
 		<changelog:release
 			projectName="@{documented.name}"
