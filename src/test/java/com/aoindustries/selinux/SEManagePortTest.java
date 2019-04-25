@@ -1,3 +1,25 @@
+/*
+ * ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
+ * Copyright (C) 2017, 2019  AO Industries, Inc.
+ *     support@aoindustries.com
+ *     7262 Bull Pen Cir
+ *     Mobile, AL 36695
+ *
+ * This file is part of ao-selinux.
+ *
+ * ao-selinux is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * ao-selinux is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with ao-selinux.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.aoindustries.selinux;
 
 import com.aoindustries.io.IoUtils;
@@ -5,13 +27,13 @@ import com.aoindustries.net.IPortRange;
 import com.aoindustries.net.Port;
 import com.aoindustries.net.PortRange;
 import com.aoindustries.net.Protocol;
-import com.aoindustries.nio.charset.Charsets;
 import com.aoindustries.util.AoCollections;
 import com.aoindustries.validation.ValidationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.SortedMap;
@@ -35,11 +57,8 @@ public class SEManagePortTest {
 	private static String loadResource(String resource) throws IOException {
 		InputStream resourceIn = SEManagePortTest.class.getResourceAsStream(resource);
 		if(resourceIn == null) throw new IOException("Resource not found: " + resource);
-		Reader in = new InputStreamReader(resourceIn, Charsets.UTF_8);
-		try {
+		try (Reader in = new InputStreamReader(resourceIn, StandardCharsets.UTF_8)) {
 			return IoUtils.readFully(in);
-		} finally {
-			in.close();
 		}
 	}
 
@@ -96,7 +115,7 @@ public class SEManagePortTest {
 	@Test
 	public void testFindOverlaps3() throws ValidationException {
 		assertEquals(
-			new TreeSet<IPortRange>(
+			new TreeSet<>(
 				Arrays.asList((IPortRange)
 					Port.valueOf(10, Protocol.TCP),
 					PortRange.valueOf(1, 10, Protocol.TCP)
@@ -114,7 +133,7 @@ public class SEManagePortTest {
 
 	@Test
 	public void testParseList() throws IOException, ValidationException {
-		SortedMap<IPortRange, String> expected = new TreeMap<IPortRange, String>();
+		SortedMap<IPortRange, String> expected = new TreeMap<>();
 		// afs3_callback_port_t           tcp      7001
 		expected.put(Port.valueOf(7001, Protocol.TCP), "afs3_callback_port_t");
 		// afs3_callback_port_t           udp      7001
@@ -138,7 +157,7 @@ public class SEManagePortTest {
 
 	@Test
 	public void testParseLocalPolicy() throws IOException, ValidationException {
-		SortedMap<IPortRange, String> expected = new TreeMap<IPortRange, String>();
+		SortedMap<IPortRange, String> expected = new TreeMap<>();
 		// ssh_port_t                     tcp      8991, 8008
 		expected.put(Port.valueOf(8991, Protocol.TCP), "ssh_port_t");
 		expected.put(Port.valueOf(8008, Protocol.TCP), "ssh_port_t");

@@ -1,6 +1,6 @@
 /*
  * ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
- * Copyright (C) 2017, 2018  AO Industries, Inc.
+ * Copyright (C) 2017, 2018, 2019  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -27,7 +27,6 @@ import com.aoindustries.net.Port;
 import com.aoindustries.net.PortRange;
 import com.aoindustries.net.Protocol;
 import com.aoindustries.util.AoCollections;
-import com.aoindustries.util.ComparatorUtils;
 import com.aoindustries.util.WrappedException;
 import com.aoindustries.validation.ValidationException;
 import java.io.BufferedReader;
@@ -99,7 +98,7 @@ public class SEManagePort {
 	private static final SortedMap<PortRange, String> defaultPolicyExtensions;
 	static {
 		try {
-			SortedMap<PortRange, String> newMap = new TreeMap<PortRange, String>();
+			SortedMap<PortRange, String> newMap = new TreeMap<>();
 			// tcp/udp/sctp: 1-511: reserved_port_t
 			newMap.put(PortRange.valueOf(1, 511, Protocol.TCP), "reserved_port_t");
 			newMap.put(PortRange.valueOf(1, 511, Protocol.UDP), "reserved_port_t");
@@ -140,13 +139,13 @@ public class SEManagePort {
 		if(portRanges instanceof List) {
 			portRangeList = (List<? extends IPortRange>)portRanges;
 		} else if(portRanges instanceof Collection) {
-			portRangeList = new ArrayList<IPortRange>((Collection<? extends IPortRange>)portRanges);
+			portRangeList = new ArrayList<>((Collection<? extends IPortRange>)portRanges);
 		} else {
-			List<IPortRange> newList = new ArrayList<IPortRange>();
+			List<IPortRange> newList = new ArrayList<>();
 			for(IPortRange portRange : portRanges) newList.add(portRange);
 			portRangeList = newList;
 		}
-		SortedSet<IPortRange> overlaps = new TreeSet<IPortRange>();
+		SortedSet<IPortRange> overlaps = new TreeSet<>();
 		int size = portRangeList.size();
 		for(int i1 = 0; i1 < size; i1++) {
 			IPortRange pr1 = portRangeList.get(i1);
@@ -187,9 +186,7 @@ public class SEManagePort {
 					.append(EOL)
 			).toString();
 		} catch(IOException e) {
-			AssertionError ae = new AssertionError("Should not happen on StringBuilder");
-			ae.initCause(e);
-			throw ae;
+			throw new AssertionError("Should not happen on StringBuilder", e);
 		}
 	}
 
@@ -238,7 +235,7 @@ public class SEManagePort {
 	private static SortedMap<IPortRange, String> coalesce(SortedMap<? extends IPortRange, String> policy) {
 		// TODO: Is there any ordering that can confuse this, like 1, 3, 2, or 1-3, 2-4, 3-5?
 		assert assertNoOverlaps(policy);
-		SortedMap<IPortRange, String> result = new TreeMap<IPortRange, String>();
+		SortedMap<IPortRange, String> result = new TreeMap<>();
 		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
 		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP, Protocol.SCTP}) {
 			IPortRange lastPortRange = null;
@@ -279,7 +276,7 @@ public class SEManagePort {
 	private static SortedSet<IPortRange> coalesce(SortedSet<? extends IPortRange> portRanges) {
 		// TODO: Is there any ordering that can confuse this, like 1, 3, 2, or 1-3, 2-4, 3-5?
 		assert assertNoOverlaps(portRanges);
-		SortedSet<IPortRange> result = new TreeSet<IPortRange>();
+		SortedSet<IPortRange> result = new TreeSet<>();
 		// Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
 		for(Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP, Protocol.SCTP}) {
 			IPortRange lastPortRange = null;
@@ -316,7 +313,7 @@ public class SEManagePort {
 	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type.
 	 */
 	static SortedMap<IPortRange,String> parseList(String stdout, Map<? extends IPortRange, String> ignore) throws IOException {
-		SortedMap<IPortRange, String> portRanges = new TreeMap<IPortRange, String>();
+		SortedMap<IPortRange, String> portRanges = new TreeMap<>();
 		BufferedReader in = new BufferedReader(new StringReader(stdout));
 		String line;
 		while((line = in.readLine()) != null) {
@@ -353,9 +350,7 @@ public class SEManagePort {
 					}
 				}
 				if(!foundPortRange) throw new IOException("No port numbers found: " + line);
-			} catch(IllegalStateException e) {
-				throw new WrappedException("line = " + line, e);
-			} catch(ValidationException e) {
+			} catch(IllegalStateException | ValidationException e) {
 				throw new WrappedException("line = " + line, e);
 			}
 		}
@@ -429,7 +424,7 @@ public class SEManagePort {
 	private static void overlay(SortedMap<IPortRange, String> policy, IPortRange portRange, String type) {
 		// Update in a single pass, ending iteration is past the port.to
 		Iterator<Map.Entry<IPortRange, String>> entryIter = policy.entrySet().iterator();
-		Map<IPortRange, String> toAdd = new HashMap<IPortRange, String>();
+		Map<IPortRange, String> toAdd = new HashMap<>();
 		while(entryIter.hasNext()) {
 			// TODO: Is there any ordering that can confuse this, like 1, 3, 2, or 1-3, 2-4, 3-5?
 			Map.Entry<IPortRange, String> existingEntry = entryIter.next();
@@ -491,7 +486,7 @@ public class SEManagePort {
 	 */
 	static SortedMap<IPortRange, String> parsePolicy(SortedMap<? extends IPortRange, String> localPolicy, SortedMap<? extends IPortRange, String> defaultPolicy) {
 		assert assertNoOverlaps(localPolicy);
-		SortedMap<IPortRange, String> policy = new TreeMap<IPortRange, String>();
+		SortedMap<IPortRange, String> policy = new TreeMap<>();
 		// Add defaults to cover all ports 1 through 65535, if not found in provided default policy
 		for(Map.Entry<PortRange, String> extensionEntry : defaultPolicyExtensions.entrySet()) {
 			PortRange portRange = extensionEntry.getKey();
@@ -503,7 +498,7 @@ public class SEManagePort {
 		// Will add default policy in the order from largest ranges to smallest as this seems
 		// to be the way SELinux applies overlapping default policies: smaller ranges take precendence
 		// over larger ranges.
-		SortedMap<IPortRange, String> sortedDefaultPolicy = new TreeMap<IPortRange, String>(
+		SortedMap<IPortRange, String> sortedDefaultPolicy = new TreeMap<>(
 			new Comparator<IPortRange>() {
 				/**
 				 * Orders by (to-from) desc, protocol asc, from asc, to asc
@@ -513,7 +508,7 @@ public class SEManagePort {
 					// (to-from) desc
 					int size1 = pr1.getTo() - pr1.getFrom();
 					int size2 = pr2.getTo() - pr2.getFrom();
-					int diff = ComparatorUtils.compare(size2, size1);
+					int diff = Integer.compare(size2, size1);
 					if(diff != 0) return diff;
 					// to asc, from asc
 					return pr1.compareTo(pr2);
@@ -655,7 +650,7 @@ public class SEManagePort {
 
 			// Check for any conflicts with any other local policy
 			{
-				SortedMap<IPortRange, String> conflicts = new TreeMap<IPortRange, String>();
+				SortedMap<IPortRange, String> conflicts = new TreeMap<>();
 				for(IPortRange portRange : portRanges) {
 					int portTo = portRange.getTo();
 					for(Map.Entry<IPortRange, String> localEntry : localPolicy.entrySet()) {
@@ -678,7 +673,7 @@ public class SEManagePort {
 			}
 
 			// Coalesce the parameters
-			SortedSet<IPortRange> coalesced = coalesce(new TreeSet<IPortRange>(portRanges));
+			SortedSet<IPortRange> coalesced = coalesce(new TreeSet<>(portRanges));
 
 			// Find all local policy for this type
 			SortedSet<IPortRange> existingPortRanges = AoCollections.filterByValue(localPolicy, type);
