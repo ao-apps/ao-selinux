@@ -39,5 +39,4 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		datePublished="2017-03-10T14:02:33-0600"
 		dateModified="${ao:getLastModified('index.html')}"
 	/>
-	<!-- TODO: Pick-up javadocs version, not pom version, in title, here and elsewhere -->
 </jsp:root>
