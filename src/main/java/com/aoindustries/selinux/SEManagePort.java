@@ -601,8 +601,8 @@ public class SEManagePort {
 	 * considered.  First, if the local policy precisely matches a default policy
 	 * entry of the expected type, the local policy entry is not added.  Second, if
 	 * the local policy has the same exact port range as a default policy entry (of
-	 * a different type), {@link #modify(com.aoindustries.net.PortRange, java.lang.String)}
-	 * will be performed instead of {@link #add(com.aoindustries.net.PortRange, java.lang.String)}.
+	 * a different type), {@link #modify(com.aoindustries.net.IPortRange, java.lang.String)}
+	 * will be performed instead of {@link #add(com.aoindustries.net.IPortRange, java.lang.String)}.
 	 * </p>
 	 * <p>
 	 * In the second modification pass, any remaining extra local policy entries
@@ -617,14 +617,16 @@ public class SEManagePort {
 	 * configuration and allowing a different SELinux type to override the port(s)
 	 * with their own local policy.
 	 * </p>
-	 *
-	 * @implNote  We could punch holes in local policy to avoid overlapping default policy,
-	 *            but we see no conflict with local policy overlapping default policy.
-	 *            As an example, if SSH were listening on both ports 22/tcp and 23/tcp,
-	 *            the current implementation will create a single local policy entry
-	 *            of 22-23/tcp, which overlaps and is partially redundant with the default
-	 *            policy of 22/tcp.  One possible benefit of this more complete local
-	 *            policy is more thorough detection of local policy conflicts.
+	 * <p>
+	 * <strong>Implementation Note:</strong><br />
+	 * We could punch holes in local policy to avoid overlapping default policy,
+	 * but we see no conflict with local policy overlapping default policy.
+	 * As an example, if SSH were listening on both ports 22/tcp and 23/tcp,
+	 * the current implementation will create a single local policy entry
+	 * of 22-23/tcp, which overlaps and is partially redundant with the default
+	 * policy of 22/tcp.  One possible benefit of this more complete local
+	 * policy is more thorough detection of local policy conflicts.
+	 * </p>
 	 *
 	 * @param  portRanges  The set of all ports that should be set to the given type.
 	 *                There must not be any overlap in the provided port ranges.
