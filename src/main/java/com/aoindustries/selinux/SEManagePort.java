@@ -1,6 +1,6 @@
 /*
  * ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
- * Copyright (C) 2017, 2018, 2019  AO Industries, Inc.
+ * Copyright (C) 2017, 2018, 2019, 2020  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -129,10 +129,12 @@ public class SEManagePort {
 
 	/**
 	 * Searches for any overlapping port ranges in the given set.
+	 * <p>
+	 * <b>Implementation Note:</b><br />
+	 * This implementation is probably not the best regarding computational complexity, but is a simple implementation.
+	 * </p>
 	 *
 	 * @return  The modifiable set of any port ranges involved in an overlap or an empty set if none overlapping.
-	 *
-	 * @implNote This implementation is probably not the best regarding computational complexity, but is a simple implementation.
 	 */
 	static SortedSet<IPortRange> findOverlaps(Iterable<? extends IPortRange> portRanges) {
 		List<? extends IPortRange> portRangeList;
@@ -618,7 +620,7 @@ public class SEManagePort {
 	 * with their own local policy.
 	 * </p>
 	 * <p>
-	 * <strong>Implementation Note:</strong><br />
+	 * <b>Implementation Note:</b><br />
 	 * We could punch holes in local policy to avoid overlapping default policy,
 	 * but we see no conflict with local policy overlapping default policy.
 	 * As an example, if SSH were listening on both ports 22/tcp and 23/tcp,
