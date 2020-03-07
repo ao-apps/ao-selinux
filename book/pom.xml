@@ -35,8 +35,6 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 	<properties>
 		<!-- These values are copied from the project being documented -->
 		<documented.artifactId>ao-selinux</documented.artifactId>
-		<documented.javaVersion>1.8</documented.javaVersion>
-		<documented.javac.link.javaApi>${javac.link.javaApi.jdk8}</documented.javac.link.javaApi>
 		<documented.name>AO SELinux</documented.name>
 		<documented.description>Java API for managing Security-Enhanced Linux (SELinux).</documented.description>
 
