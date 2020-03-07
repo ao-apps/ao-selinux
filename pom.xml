@@ -29,7 +29,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		<relativePath>../ao-oss-parent/pom.xml</relativePath>
 	</parent>
 
-	<groupId>com.aoindustries</groupId><artifactId>ao-selinux</artifactId><version>1.1.1-POST-SNAPSHOT</version>
+	<groupId>com.aoindustries</groupId><artifactId>ao-selinux</artifactId><version>1.1.2-SNAPSHOT</version>
 	<packaging>bundle</packaging>
 
 	<properties>
@@ -40,15 +40,15 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 	</properties>
 
 	<name>AO SELinux</name>
-	<url>https://aoindustries.com/${project.artifactId}/</url>
+	<url>https://aoindustries.com/ao-selinux/</url>
 	<description>Java API for managing Security-Enhanced Linux (SELinux).</description>
 	<inceptionYear>2017</inceptionYear>
 
 	<scm>
 		<!-- Can't inherit due to multi-module -->
-		<connection>scm:git:git://github.com/aoindustries/${project.artifactId}.git</connection>
-		<developerConnection>scm:git:git@github.com:aoindustries/${project.artifactId}.git</developerConnection>
-		<url>https://github.com/aoindustries/${project.artifactId}</url>
+		<connection>scm:git:git://github.com/aoindustries/ao-selinux.git</connection>
+		<developerConnection>scm:git:git@github.com:aoindustries/ao-selinux.git</developerConnection>
+		<url>https://github.com/aoindustries/ao-selinux</url>
 		<tag>HEAD</tag>
 	</scm>
 
