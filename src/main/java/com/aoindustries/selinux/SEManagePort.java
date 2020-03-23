@@ -35,7 +35,6 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -501,20 +500,17 @@ public class SEManagePort {
 		// to be the way SELinux applies overlapping default policies: smaller ranges take precendence
 		// over larger ranges.
 		SortedMap<IPortRange, String> sortedDefaultPolicy = new TreeMap<>(
-			new Comparator<IPortRange>() {
-				/**
-				 * Orders by (to-from) desc, protocol asc, from asc, to asc
-				 */
-				@Override
-				public int compare(IPortRange pr1, IPortRange pr2) {
-					// (to-from) desc
-					int size1 = pr1.getTo() - pr1.getFrom();
-					int size2 = pr2.getTo() - pr2.getFrom();
-					int diff = Integer.compare(size2, size1);
-					if(diff != 0) return diff;
-					// to asc, from asc
-					return pr1.compareTo(pr2);
-				}
+			/**
+			 * Orders by (to-from) desc, protocol asc, from asc, to asc
+			 */
+			(pr1, pr2) -> {
+				// (to-from) desc
+				int size1 = pr1.getTo() - pr1.getFrom();
+				int size2 = pr2.getTo() - pr2.getFrom();
+				int diff = Integer.compare(size2, size1);
+				if(diff != 0) return diff;
+				// to asc, from asc
+				return pr1.compareTo(pr2);
 			}
 		);
 		sortedDefaultPolicy.putAll(defaultPolicy);
