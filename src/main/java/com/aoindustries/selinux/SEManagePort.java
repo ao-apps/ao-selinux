@@ -22,11 +22,11 @@
  */
 package com.aoindustries.selinux;
 
+import com.aoindustries.collections.AoCollections;
 import com.aoindustries.net.IPortRange;
 import com.aoindustries.net.Port;
 import com.aoindustries.net.PortRange;
 import com.aoindustries.net.Protocol;
-import com.aoindustries.util.AoCollections;
 import com.aoindustries.util.WrappedException;
 import com.aoindustries.validation.ValidationException;
 import java.io.BufferedReader;
