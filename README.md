@@ -27,7 +27,7 @@ Java API for managing Security-Enhanced Linux (SELinux).
 * [Project Home](https://aoindustries.com/ao-selinux/)
 * [Changelog](https://aoindustries.com/ao-selinux/changelog)
 * [API Docs](https://aoindustries.com/ao-selinux/apidocs/)
-* [Maven Central Repository](https://search.maven.org/#search%7Cgav%7C1%7Cg:%22com.aoindustries%22%20AND%20a:%22ao-selinux%22)
+* [Maven Central Repository](https://search.maven.org/artifact/com.aoindustries/ao-selinux)
 * [GitHub](https://github.com/aoindustries/ao-selinux)
 
 ## Features
