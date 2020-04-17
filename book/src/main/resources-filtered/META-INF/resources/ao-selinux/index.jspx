@@ -79,7 +79,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		<section:section label="Motivation">
 			<p>
 				While migrating our servers to CentOS 7 we are running with SELinux in enforcing mode.  Our server configuration
-				process, <core:link book="/" page="/aoserv/daemon/index.jspx" />, is written in the Java programming language.
+				process, <core:link book="/aoserv/daemon" page="/index.jspx" />, is written in the Java programming language.
 				We desire a clean interface to SELinux without having to operate with <code>semanage</code> and other
 				commands directly.
 			</p>
