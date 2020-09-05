@@ -23,11 +23,11 @@
 package com.aoindustries.selinux;
 
 import com.aoindustries.collections.AoCollections;
+import com.aoindustries.exception.WrappedException;
 import com.aoindustries.net.IPortRange;
 import com.aoindustries.net.Port;
 import com.aoindustries.net.PortRange;
 import com.aoindustries.net.Protocol;
-import com.aoindustries.exception.WrappedException;
 import com.aoindustries.validation.ValidationException;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -143,7 +143,10 @@ public class SEManagePort {
 			portRangeList = new ArrayList<>((Collection<? extends IPortRange>)portRanges);
 		} else {
 			List<IPortRange> newList = new ArrayList<>();
-			for(IPortRange portRange : portRanges) newList.add(portRange);
+			assert portRanges != null;
+			for(IPortRange portRange : portRanges) {
+				newList.add(portRange);
+			}
 			portRangeList = newList;
 		}
 		SortedSet<IPortRange> overlaps = new TreeSet<>();
@@ -274,6 +277,7 @@ public class SEManagePort {
 	 *
 	 * @return the modifiable set of coalesced port ranges.
 	 */
+	@SuppressWarnings("AssignmentToForLoopParameter")
 	private static SortedSet<IPortRange> coalesce(SortedSet<? extends IPortRange> portRanges) {
 		// TODO: Is there any ordering that can confuse this, like 1, 3, 2, or 1-3, 2-4, 3-5?
 		assert assertNoOverlaps(portRanges);
