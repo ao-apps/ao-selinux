@@ -124,7 +124,7 @@ public class SEManagePort {
 		}
 	}
 
-	private static final String EOL = System.getProperty("line.separator");
+	private static final String EOL = System.lineSeparator();
 
 	/**
 	 * Searches for any overlapping port ranges in the given set.
