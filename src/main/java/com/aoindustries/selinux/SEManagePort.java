@@ -1,6 +1,6 @@
 /*
  * ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
- * Copyright (C) 2017, 2018, 2019, 2020  AO Industries, Inc.
+ * Copyright (C) 2017, 2018, 2019, 2020, 2021  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -317,7 +317,7 @@ public class SEManagePort {
 	 *
 	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type.
 	 */
-	static SortedMap<IPortRange,String> parseList(String stdout, Map<? extends IPortRange, String> ignore) throws IOException {
+	static SortedMap<IPortRange, String> parseList(String stdout, Map<? extends IPortRange, String> ignore) throws IOException {
 		SortedMap<IPortRange, String> portRanges = new TreeMap<>();
 		BufferedReader in = new BufferedReader(new StringReader(stdout));
 		String line;
@@ -368,7 +368,7 @@ public class SEManagePort {
 	 *
 	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type.
 	 */
-	private static SortedMap<IPortRange,String> getLocalPolicy() throws IOException {
+	private static SortedMap<IPortRange, String> getLocalPolicy() throws IOException {
 		return parseLocalPolicy(SEManage.execSemanage("port", "--noheading", "--list", "--locallist").getStdout());
 	}
 
@@ -378,8 +378,8 @@ public class SEManagePort {
 	 *
 	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type.
 	 */
-	static SortedMap<IPortRange,String> parseLocalPolicy(String stdout) throws IOException {
-		SortedMap<IPortRange,String> localPolicy = parseList(stdout, null);
+	static SortedMap<IPortRange, String> parseLocalPolicy(String stdout) throws IOException {
+		SortedMap<IPortRange, String> localPolicy = parseList(stdout, null);
 		if(logger.isLoggable(Level.FINEST)) {
 			logger.finest(dumpPolicy("Local Policy:", localPolicy));
 		}
@@ -401,7 +401,7 @@ public class SEManagePort {
 	 *
 	 * @return  the unmodifiable mapping of possibly overlapping port ranges to SELinux type.
 	 */
-	private static SortedMap<IPortRange,String> getDefaultPolicy(SortedMap<? extends IPortRange,String> localPolicy) throws IOException {
+	private static SortedMap<IPortRange, String> getDefaultPolicy(SortedMap<? extends IPortRange, String> localPolicy) throws IOException {
 		return parseDefaultPolicy(SEManage.execSemanage("port", "--noheading", "--list").getStdout(), localPolicy);
 	}
 
@@ -411,7 +411,7 @@ public class SEManagePort {
 	 *
 	 * @return  the unmodifiable mapping of possibly overlapping port ranges to SELinux type.
 	 */
-	static SortedMap<IPortRange,String> parseDefaultPolicy(String stdout, SortedMap<? extends IPortRange,String> localPolicy) throws IOException {
+	static SortedMap<IPortRange, String> parseDefaultPolicy(String stdout, SortedMap<? extends IPortRange, String> localPolicy) throws IOException {
 		assert assertNoOverlaps(localPolicy);
 		SortedMap<IPortRange, String> defaultPolicy = parseList(stdout, localPolicy);
 		if(logger.isLoggable(Level.FINEST)) {
@@ -476,9 +476,9 @@ public class SEManagePort {
 	 *
 	 * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type, covering all ports 1 through 65535 in tcp, udp, and sctp, coalesced into minimum entries.
 	 */
-	public static SortedMap<IPortRange,String> getPolicy() throws IOException {
-		SortedMap<IPortRange,String> localPolicy;
-		SortedMap<IPortRange,String> defaultPolicy;
+	public static SortedMap<IPortRange, String> getPolicy() throws IOException {
+		SortedMap<IPortRange, String> localPolicy;
+		SortedMap<IPortRange, String> defaultPolicy;
 		synchronized(SEManage.semanageLock) {
 			localPolicy = getLocalPolicy();
 			defaultPolicy = getDefaultPolicy(localPolicy);
