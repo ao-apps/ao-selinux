@@ -22,13 +22,13 @@
  */
 package com.aoindustries.selinux;
 
-import com.aoindustries.collections.AoCollections;
-import com.aoindustries.exception.WrappedException;
-import com.aoindustries.net.IPortRange;
-import com.aoindustries.net.Port;
-import com.aoindustries.net.PortRange;
-import com.aoindustries.net.Protocol;
-import com.aoindustries.validation.ValidationException;
+import com.aoapps.collections.AoCollections;
+import com.aoapps.lang.exception.WrappedException;
+import com.aoapps.lang.validation.ValidationException;
+import com.aoapps.net.IPortRange;
+import com.aoapps.net.Port;
+import com.aoapps.net.PortRange;
+import com.aoapps.net.Protocol;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -603,8 +603,8 @@ public class SEManagePort {
 	 * considered.  First, if the local policy precisely matches a default policy
 	 * entry of the expected type, the local policy entry is not added.  Second, if
 	 * the local policy has the same exact port range as a default policy entry (of
-	 * a different type), {@link #modify(com.aoindustries.net.IPortRange, java.lang.String)}
-	 * will be performed instead of {@link #add(com.aoindustries.net.IPortRange, java.lang.String)}.
+	 * a different type), {@link #modify(com.aoapps.net.IPortRange, java.lang.String)}
+	 * will be performed instead of {@link #add(com.aoapps.net.IPortRange, java.lang.String)}.
 	 * </p>
 	 * <p>
 	 * In the second modification pass, any remaining extra local policy entries

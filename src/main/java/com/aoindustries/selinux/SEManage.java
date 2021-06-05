@@ -1,6 +1,6 @@
 /*
  * ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
- * Copyright (C) 2017  AO Industries, Inc.
+ * Copyright (C) 2017, 2021  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -22,7 +22,7 @@
  */
 package com.aoindustries.selinux;
 
-import com.aoindustries.lang.ProcessResult;
+import com.aoapps.lang.ProcessResult;
 import java.io.IOException;
 
 /**
