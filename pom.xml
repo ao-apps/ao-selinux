@@ -29,7 +29,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		<relativePath>../oss/parent/pom.xml</relativePath>
 	</parent>
 
-	<groupId>com.aoindustries</groupId><artifactId>ao-selinux</artifactId><version>1.1.3-SNAPSHOT</version>
+	<groupId>com.aoindustries</groupId><artifactId>ao-selinux</artifactId><version>1.1.3</version>
 	<packaging>bundle</packaging>
 
 	<properties>
@@ -84,7 +84,7 @@ along with ao-selinux.  If not, see <http://www.gnu.org/licenses />.
 		<connection>scm:git:git://github.com/aoindustries/ao-selinux.git</connection>
 		<developerConnection>scm:git:git@github.com:aoindustries/ao-selinux.git</developerConnection>
 		<url>https://github.com/aoindustries/ao-selinux</url>
-		<tag>HEAD</tag>
+		<tag>ao-selinux-1.1.3</tag>
 	</scm>
 
 	<issueManagement>
