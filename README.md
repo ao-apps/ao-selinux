@@ -1,4 +1,4 @@
-# [<img src="ao-logo.png" alt="AO Logo" width="35" height="40">](https://github.com/aoindustries) [AO SELinux](https://github.com/aoindustries/ao-selinux)
+# [<img src="ao-logo.png" alt="AO Logo" width="35" height="40">](https://github.com/ao-apps) [AO SELinux](https://github.com/ao-apps/ao-selinux)
 
 [![project: current stable](https://aoindustries.com/ao-badges/project-current-stable.svg)](https://aoindustries.com/life-cycle#project-current-stable)
 [![management: production](https://aoindustries.com/ao-badges/management-production.svg)](https://aoindustries.com/life-cycle#management-production)
@@ -7,7 +7,7 @@
 [![semantic versioning: 2.0.0](https://aoindustries.com/ao-badges/semver-2.0.0.svg)](http://semver.org/spec/v2.0.0.html)
 [![license: LGPL v3](https://aoindustries.com/ao-badges/license-lgpl-3.0.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 
-[![Build](https://github.com/aoindustries/ao-selinux/workflows/Build/badge.svg?branch=master)](https://github.com/aoindustries/ao-selinux/actions?query=workflow%3ABuild)
+[![Build](https://github.com/ao-apps/ao-selinux/workflows/Build/badge.svg?branch=master)](https://github.com/ao-apps/ao-selinux/actions?query=workflow%3ABuild)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.aoindustries/ao-selinux/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.aoindustries/ao-selinux)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?branch=master&project=com.aoapps.platform%3Aaoapps-selinux&metric=alert_status)](https://sonarcloud.io/dashboard?branch=master&id=com.aoapps.platform%3Aaoapps-selinux)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?branch=master&project=com.aoapps.platform%3Aaoapps-selinux&metric=ncloc)](https://sonarcloud.io/component_measures?branch=master&id=com.aoapps.platform%3Aaoapps-selinux&metric=ncloc)  
@@ -23,7 +23,7 @@ Java API for managing Security-Enhanced Linux (SELinux).
 * [Changelog](https://aoindustries.com/ao-selinux/changelog)
 * [API Docs](https://aoindustries.com/ao-selinux/apidocs/)
 * [Maven Central Repository](https://search.maven.org/artifact/com.aoindustries/ao-selinux)
-* [GitHub](https://github.com/aoindustries/ao-selinux)
+* [GitHub](https://github.com/ao-apps/ao-selinux)
 
 ## Features
 * Clean programmatic access to [semanage](https://fedoraproject.org/wiki/SELinux/semanage).
@@ -36,7 +36,7 @@ Java API for managing Security-Enhanced Linux (SELinux).
 * Small footprint, minimal dependencies - not part of a big monolithic package.
 
 ## Motivation
-While migrating our servers to CentOS 7 we are running with SELinux in enforcing mode.  Our server configuration process, [AOServ Daemon](https://github.com/aoindustries/aoserv-daemon), is written in the Java programming language.  We desire a clean interface to SELinux without having to operate with `semanage` and other commands directly.
+While migrating our servers to CentOS 7 we are running with SELinux in enforcing mode.  Our server configuration process, [AOServ Daemon](https://github.com/ao-apps/aoserv-daemon), is written in the Java programming language.  We desire a clean interface to SELinux without having to operate with `semanage` and other commands directly.
 
 ## Evaluated Alternatives
 We were unable to find any existing implementations via [GitHub](https://github.com/search?utf8=%E2%9C%93&q=java+selinux&type=Repositories&ref=searchresults), [The Central Repository](http://search.maven.org/#search|ga|1|selinux), or [Google Search](https://www.google.com/search?q=java+api+for+selinux).
