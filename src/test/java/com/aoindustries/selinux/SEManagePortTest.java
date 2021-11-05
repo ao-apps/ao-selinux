@@ -53,16 +53,13 @@ import org.junit.Test;
  * @author  AO Industries, Inc.
  */
 public class SEManagePortTest {
-	
+
 	private static String loadResource(String resource) throws IOException {
 		InputStream resourceIn = SEManagePortTest.class.getResourceAsStream(resource);
 		if(resourceIn == null) throw new IOException("Resource not found: " + resource);
 		try (Reader in = new InputStreamReader(resourceIn, StandardCharsets.UTF_8)) {
 			return IoUtils.readFully(in);
 		}
-	}
-
-	public SEManagePortTest() {
 	}
 
 	private static String testDataSimpleSubset;
@@ -75,7 +72,7 @@ public class SEManagePortTest {
 		testDataLocalWithModified8008 = loadResource("semanage-port-noheading-list-local-with-modified-8008.txt");
 		testDataFullWithModified8008 = loadResource("semanage-port-noheading-list-full-with-modified-8008.txt");
 	}
-	
+
 	@AfterClass
 	public static void tearDownClass() {
 		testDataSimpleSubset = null;

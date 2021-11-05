@@ -76,7 +76,10 @@ import java.util.regex.Pattern;
  *
  * @author  AO Industries, Inc.
  */
-public class SEManagePort {
+public abstract class SEManagePort {
+
+	/** Make no instances. */
+	private SEManagePort() {throw new AssertionError();}
 
 	private static final Logger logger = Logger.getLogger(SEManagePort.class.getName());
 
@@ -744,11 +747,5 @@ public class SEManagePort {
 		int to = portRange.getTo();
 		if(from == to) return Integer.toString(from);
 		else return Integer.toString(from) + '-' + Integer.toString(to);
-	}
-
-	/**
-	 * Make no instances.
-	 */
-	private SEManagePort() {
 	}
 }

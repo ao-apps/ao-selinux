@@ -30,7 +30,10 @@ import java.io.IOException;
  *
  * @author  AO Industries, Inc.
  */
-class SEManage {
+abstract class SEManage {
+
+	/** Make no instances. */
+	private SEManage() {throw new AssertionError();}
 
 	// Unused: private static final Logger logger = Logger.getLogger(SEManage.class.getName());
 
@@ -42,7 +45,7 @@ class SEManage {
 	/**
 	 * Serializes access to the underlying <code>semanage</code> command.
 	 */
-	private static class SemanageLock {}
+	private static class SemanageLock {/* Empty lock class to help heap profile */}
 	static final SemanageLock semanageLock = new SemanageLock();
 
 	/**
@@ -60,11 +63,5 @@ class SEManage {
 		}
 		if(result.getExitVal() != 0) throw new IOException(result.getStderr());
 		return result;
-	}
-
-	/**
-	 * Make no instances.
-	 */
-	private SEManage() {
 	}
 }
