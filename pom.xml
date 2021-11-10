@@ -106,6 +106,9 @@ along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
 			<releases>
 				<enabled>false</enabled>
 			</releases>
+			<snapshots>
+				<checksumPolicy>fail</checksumPolicy>
+			</snapshots>
 		</repository>
 	</repositories>
 
