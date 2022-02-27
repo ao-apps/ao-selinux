@@ -1,6 +1,6 @@
 /*
  * ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
- * Copyright (C) 2017, 2018, 2019, 2020, 2021  AO Industries, Inc.
+ * Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -76,7 +76,7 @@ import java.util.regex.Pattern;
  *
  * @author  AO Industries, Inc.
  */
-public abstract class SEManagePort {
+public final class SEManagePort {
 
 	/** Make no instances. */
 	private SEManagePort() {throw new AssertionError();}
