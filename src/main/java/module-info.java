@@ -1,6 +1,6 @@
 /*
  * ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
- * Copyright (C) 2021  AO Industries, Inc.
+ * Copyright (C) 2021, 2022  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -21,11 +21,11 @@
  * along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
  */
 module com.aoindustries.selinux {
-	exports com.aoindustries.selinux;
-	// Direct
-	requires com.aoapps.collections; // <groupId>com.aoapps</groupId><artifactId>ao-collections</artifactId>
-	requires com.aoapps.lang; // <groupId>com.aoapps</groupId><artifactId>ao-lang</artifactId>
-	requires com.aoapps.net.types; // <groupId>com.aoapps</groupId><artifactId>ao-net-types</artifactId>
-	// Java SE
-	requires java.logging;
+  exports com.aoindustries.selinux;
+  // Direct
+  requires com.aoapps.collections; // <groupId>com.aoapps</groupId><artifactId>ao-collections</artifactId>
+  requires com.aoapps.lang; // <groupId>com.aoapps</groupId><artifactId>ao-lang</artifactId>
+  requires com.aoapps.net.types; // <groupId>com.aoapps</groupId><artifactId>ao-net-types</artifactId>
+  // Java SE
+  requires java.logging;
 }
