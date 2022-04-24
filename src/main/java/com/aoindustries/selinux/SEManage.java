@@ -48,7 +48,9 @@ final class SEManage {
   /**
    * Serializes access to the underlying <code>semanage</code> command.
    */
-  private static class SemanageLock {/* Empty lock class to help heap profile */}
+  private static class SemanageLock {
+    // Empty lock class to help heap profile
+  }
   static final SemanageLock semanageLock = new SemanageLock();
 
   /**

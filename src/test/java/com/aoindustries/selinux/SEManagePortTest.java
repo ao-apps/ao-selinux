@@ -86,48 +86,48 @@ public class SEManagePortTest {
   @Test
   public void testFindOverlaps1() throws ValidationException {
     assertEquals(
-      AoCollections.emptySortedSet(),
-      SEManagePort.findOverlaps(
-        Arrays.asList(
-          Port.valueOf(10, Protocol.TCP),
-          Port.valueOf(10, Protocol.UDP)
+        AoCollections.emptySortedSet(),
+        SEManagePort.findOverlaps(
+            Arrays.asList(
+                Port.valueOf(10, Protocol.TCP),
+                Port.valueOf(10, Protocol.UDP)
+            )
         )
-      )
     );
   }
 
   @Test
   public void testFindOverlaps2() throws ValidationException {
     assertEquals(
-      AoCollections.singletonSortedSet(
-        Port.valueOf(10, Protocol.TCP)
-      ),
-      SEManagePort.findOverlaps(
-        Arrays.asList(
-          Port.valueOf(10, Protocol.TCP),
-          Port.valueOf(10, Protocol.UDP),
-          Port.valueOf(10, Protocol.TCP)
+        AoCollections.singletonSortedSet(
+            Port.valueOf(10, Protocol.TCP)
+        ),
+        SEManagePort.findOverlaps(
+            Arrays.asList(
+                Port.valueOf(10, Protocol.TCP),
+                Port.valueOf(10, Protocol.UDP),
+                Port.valueOf(10, Protocol.TCP)
+            )
         )
-      )
     );
   }
 
   @Test
   public void testFindOverlaps3() throws ValidationException {
     assertEquals(
-      new TreeSet<>(
-        Arrays.asList((IPortRange)
-          Port.valueOf(10, Protocol.TCP),
-          PortRange.valueOf(1, 10, Protocol.TCP)
+        new TreeSet<>(
+            Arrays.asList((IPortRange)
+                    Port.valueOf(10, Protocol.TCP),
+                PortRange.valueOf(1, 10, Protocol.TCP)
+            )
+        ),
+        SEManagePort.findOverlaps(
+            Arrays.asList((IPortRange)
+                    Port.valueOf(10, Protocol.TCP),
+                Port.valueOf(10, Protocol.UDP),
+                PortRange.valueOf(1, 10, Protocol.TCP)
+            )
         )
-      ),
-      SEManagePort.findOverlaps(
-        Arrays.asList((IPortRange)
-          Port.valueOf(10, Protocol.TCP),
-          Port.valueOf(10, Protocol.UDP),
-          PortRange.valueOf(1, 10, Protocol.TCP)
-        )
-      )
     );
   }
 
@@ -150,8 +150,8 @@ public class SEManagePortTest {
     // zope_port_t                    tcp      8021
     expected.put(Port.valueOf(8021, Protocol.TCP), "zope_port_t");
     assertEquals(
-      expected,
-      SEManagePort.parseList(testDataSimpleSubset, null)
+        expected,
+        SEManagePort.parseList(testDataSimpleSubset, null)
     );
   }
 
@@ -162,16 +162,16 @@ public class SEManagePortTest {
     expected.put(Port.valueOf(8991, Protocol.TCP), "ssh_port_t");
     expected.put(Port.valueOf(8008, Protocol.TCP), "ssh_port_t");
     assertEquals(
-      expected,
-      SEManagePort.parseLocalPolicy(testDataLocalWithModified8008)
+        expected,
+        SEManagePort.parseLocalPolicy(testDataLocalWithModified8008)
     );
   }
 
   @Test
   public void testParseLocalPolicyNoOverlap() throws IOException {
     assertEquals(
-      AoCollections.emptySortedSet(),
-      SEManagePort.findOverlaps(SEManagePort.parseLocalPolicy(testDataLocalWithModified8008).keySet())
+        AoCollections.emptySortedSet(),
+        SEManagePort.findOverlaps(SEManagePort.parseLocalPolicy(testDataLocalWithModified8008).keySet())
     );
   }
 
@@ -181,8 +181,8 @@ public class SEManagePortTest {
     SortedMap<IPortRange, String> defaultPolicy = SEManagePort.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
     // Make sure the default policy is used for port 8080
     assertEquals(
-      "http_port_t",
-      defaultPolicy.get(Port.valueOf(8008, Protocol.TCP))
+        "http_port_t",
+        defaultPolicy.get(Port.valueOf(8008, Protocol.TCP))
     );
   }
 
@@ -193,8 +193,8 @@ public class SEManagePortTest {
     SortedMap<IPortRange, String> policy = SEManagePort.parsePolicy(localPolicy, defaultPolicy);
     // Make sure the local policy is used for port 8080
     assertEquals(
-      "ssh_port_t",
-      policy.get(Port.valueOf(8008, Protocol.TCP))
+        "ssh_port_t",
+        policy.get(Port.valueOf(8008, Protocol.TCP))
     );
   }
 
@@ -203,21 +203,21 @@ public class SEManagePortTest {
     SortedMap<IPortRange, String> localPolicy = SEManagePort.parseLocalPolicy(testDataLocalWithModified8008);
     SortedMap<IPortRange, String> defaultPolicy = SEManagePort.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
     SortedMap<IPortRange, String> policy = SEManagePort.parsePolicy(localPolicy, defaultPolicy);
-    for (Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
+    for (Protocol protocol : new Protocol[]{Protocol.TCP, Protocol.UDP}) {
       IPortRange lastPortRange = null;
       for (IPortRange portRange : policy.keySet()) {
         if (portRange.getProtocol() == protocol) {
           if (lastPortRange == null) {
             assertEquals(
-              "Must start on port 1",
-              1,
-              portRange.getFrom()
+                "Must start on port 1",
+                1,
+                portRange.getFrom()
             );
           } else {
             assertEquals(
-              "Must be one after last seen",
-              lastPortRange.getTo() + 1,
-              portRange.getFrom()
+                "Must be one after last seen",
+                lastPortRange.getTo() + 1,
+                portRange.getFrom()
             );
           }
           lastPortRange = portRange;
@@ -225,9 +225,9 @@ public class SEManagePortTest {
       }
       assertNotNull(lastPortRange);
       assertEquals(
-        "Must end on port 65535",
-        65535,
-        lastPortRange.getTo()
+          "Must end on port 65535",
+          65535,
+          lastPortRange.getTo()
       );
     }
   }
@@ -237,18 +237,18 @@ public class SEManagePortTest {
     SortedMap<IPortRange, String> localPolicy = SEManagePort.parseLocalPolicy(testDataLocalWithModified8008);
     SortedMap<IPortRange, String> defaultPolicy = SEManagePort.parseDefaultPolicy(testDataFullWithModified8008, localPolicy);
     SortedMap<IPortRange, String> policy = SEManagePort.parsePolicy(localPolicy, defaultPolicy);
-    for (Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP}) {
+    for (Protocol protocol : new Protocol[]{Protocol.TCP, Protocol.UDP}) {
       IPortRange lastPortRange = null;
       String lastType = null;
-      for (Map.Entry<IPortRange, String> entry: policy.entrySet()) {
+      for (Map.Entry<IPortRange, String> entry : policy.entrySet()) {
         IPortRange portRange = entry.getKey();
         if (portRange.getProtocol() == protocol) {
           String type = entry.getValue();
           if (lastPortRange != null) {
             assertNotEquals(
-              "Adjacent ports must be of different types when properly coalesced (" + lastPortRange +", " + portRange + ")",
-              lastType,
-              type
+                "Adjacent ports must be of different types when properly coalesced (" + lastPortRange + ", " + portRange + ")",
+                lastType,
+                type
             );
           }
           lastPortRange = portRange;
@@ -259,32 +259,32 @@ public class SEManagePortTest {
       assertNotNull(lastType);
     }
     assertEquals(
-      "saphostctrl_port_t",
-      policy.get(PortRange.valueOf(1128, 1129, Protocol.TCP))
+        "saphostctrl_port_t",
+        policy.get(PortRange.valueOf(1128, 1129, Protocol.TCP))
     );
   }
 
   @Test
   public void testGetPortRange1() throws ValidationException {
     assertEquals(
-      "1-65535",
-      SEManagePort.getPortRange(PortRange.valueOf(1, 65535, Protocol.UDP))
+        "1-65535",
+        SEManagePort.getPortRange(PortRange.valueOf(1, 65535, Protocol.UDP))
     );
   }
 
   @Test
   public void testGetPortRange2() throws ValidationException {
     assertEquals(
-      "167",
-      SEManagePort.getPortRange(Port.valueOf(167, Protocol.TCP))
+        "167",
+        SEManagePort.getPortRange(Port.valueOf(167, Protocol.TCP))
     );
   }
 
   @Test
   public void testGetPortRange3() throws ValidationException {
     assertEquals(
-      "67",
-      SEManagePort.getPortRange(Port.valueOf(67, Protocol.UDP))
+        "67",
+        SEManagePort.getPortRange(Port.valueOf(67, Protocol.UDP))
     );
   }
 }
