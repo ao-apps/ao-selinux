@@ -28,4 +28,4 @@ module com.aoindustries.selinux {
   requires com.aoapps.net.types; // <groupId>com.aoapps</groupId><artifactId>ao-net-types</artifactId>
   // Java SE
   requires java.logging;
-}
+} // TODO: Avoiding rewrite-maven-plugin-4.22.2 truncation
