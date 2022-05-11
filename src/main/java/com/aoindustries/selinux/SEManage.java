@@ -53,10 +53,11 @@ final class SEManage {
       // Empty lock class to help heap profile
     }
   }
+
   static final SemanageLock semanageLock = new SemanageLock();
 
   /**
-   * Calls the <code>semanage</code> command with the given arguments
+   * Calls the <code>semanage</code> command with the given arguments.
    *
    * @throws  IOException  when I/O exception or non-zero exit value
    */

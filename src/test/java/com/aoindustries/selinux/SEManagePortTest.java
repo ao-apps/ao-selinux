@@ -23,6 +23,10 @@
 
 package com.aoindustries.selinux;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.aoapps.collections.AoCollections;
 import com.aoapps.lang.io.IoUtils;
 import com.aoapps.lang.validation.ValidationException;
@@ -41,15 +45,12 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 
 /**
- * @see  SEManagePort
+ * Tests {@link SEManagePort}.
  *
  * @author  AO Industries, Inc.
  */
@@ -69,6 +70,9 @@ public class SEManagePortTest {
   private static String testDataLocalWithModified8008;
   private static String testDataFullWithModified8008;
 
+  /**
+   * Sets up class.
+   */
   @BeforeClass
   public static void setUpClass() throws IOException {
     testDataSimpleSubset = loadResource("semanage-port-noheading-list-simple-subset.txt");
@@ -76,6 +80,9 @@ public class SEManagePortTest {
     testDataFullWithModified8008 = loadResource("semanage-port-noheading-list-full-with-modified-8008.txt");
   }
 
+  /**
+   * Tears down class.
+   */
   @AfterClass
   public static void tearDownClass() {
     testDataSimpleSubset = null;
@@ -117,13 +124,13 @@ public class SEManagePortTest {
     assertEquals(
         new TreeSet<>(
             Arrays.asList((IPortRange)
-                    Port.valueOf(10, Protocol.TCP),
+                Port.valueOf(10, Protocol.TCP),
                 PortRange.valueOf(1, 10, Protocol.TCP)
             )
         ),
         SEManagePort.findOverlaps(
             Arrays.asList((IPortRange)
-                    Port.valueOf(10, Protocol.TCP),
+                Port.valueOf(10, Protocol.TCP),
                 Port.valueOf(10, Protocol.UDP),
                 PortRange.valueOf(1, 10, Protocol.TCP)
             )

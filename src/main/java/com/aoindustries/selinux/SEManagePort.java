@@ -344,22 +344,22 @@ public final class SEManagePort {
         while (tokens.hasMoreTokens()) {
           foundPortRange = true;
           IPortRange portRange;
-          {
-            String token = tokens.nextToken();
-            int hyphenPos = token.indexOf('-');
-            if (hyphenPos == -1) {
-              portRange = Port.valueOf(
-                  Integer.parseInt(token),
-                  protocol
-              );
-            } else {
-              portRange = PortRange.valueOf(
-                  Integer.parseInt(token.substring(0, hyphenPos)),
-                  Integer.parseInt(token.substring(hyphenPos + 1)),
-                  protocol
-              );
+            {
+              String token = tokens.nextToken();
+              int hyphenPos = token.indexOf('-');
+              if (hyphenPos == -1) {
+                portRange = Port.valueOf(
+                    Integer.parseInt(token),
+                    protocol
+                );
+              } else {
+                portRange = PortRange.valueOf(
+                    Integer.parseInt(token.substring(0, hyphenPos)),
+                    Integer.parseInt(token.substring(hyphenPos + 1)),
+                    protocol
+                );
+              }
             }
-          }
           if (ignore == null || !type.equals(ignore.get(portRange))) {
             String existingType = portRanges.put(portRange, type);
             if (existingType != null) {
@@ -508,7 +508,7 @@ public final class SEManagePort {
   }
 
   /**
-   * @see  #getPolicy()
+   * See {@link #getPolicy()}.
    */
   static SortedMap<IPortRange, String> parsePolicy(SortedMap<? extends IPortRange, String> localPolicy, SortedMap<? extends IPortRange, String> defaultPolicy) {
     assert assertNoOverlaps(localPolicy);
@@ -525,7 +525,7 @@ public final class SEManagePort {
     // to be the way SELinux applies overlapping default policies: smaller ranges take precendence
     // over larger ranges.
     SortedMap<IPortRange, String> sortedDefaultPolicy = new TreeMap<>(
-        /**
+        /*
          * Orders by (to-from) desc, protocol asc, from asc, to asc
          */
         (pr1, pr2) -> {
@@ -664,40 +664,40 @@ public final class SEManagePort {
    * @throws  IllegalStateException  if detected overlap with local policy of a different type
    */
   public static boolean configure(Set<? extends IPortRange> portRanges, String type) throws IllegalArgumentException, IllegalStateException, IOException {
-    // There must not be any overlapping port ranges
-    {
-      SortedSet<IPortRange> overlaps = findOverlaps(portRanges);
-      if (!overlaps.isEmpty()) {
-        throw new IllegalArgumentException("Port ranges overlap: " + overlaps);
+      // There must not be any overlapping port ranges
+      {
+        SortedSet<IPortRange> overlaps = findOverlaps(portRanges);
+        if (!overlaps.isEmpty()) {
+          throw new IllegalArgumentException("Port ranges overlap: " + overlaps);
+        }
       }
-    }
     synchronized (SEManage.semanageLock) {
       // Load local policy
       SortedMap<IPortRange, String> localPolicy = getLocalPolicy();
 
-      // Check for any conflicts with any other local policy
-      {
-        SortedMap<IPortRange, String> conflicts = new TreeMap<>();
-        for (IPortRange portRange : portRanges) {
-          int portTo = portRange.getTo();
-          for (Map.Entry<IPortRange, String> localEntry : localPolicy.entrySet()) {
-            IPortRange localPortRange = localEntry.getKey();
-            if (localPortRange.getFrom() > portTo) {
-              // Past portRange.to, end iteration
-              break;
-            }
-            if (portRange.overlaps(localPortRange)) {
-              String localType = localEntry.getValue();
-              if (!type.equals(localType)) {
-                conflicts.put(localPortRange, localType);
+        // Check for any conflicts with any other local policy
+        {
+          SortedMap<IPortRange, String> conflicts = new TreeMap<>();
+          for (IPortRange portRange : portRanges) {
+            int portTo = portRange.getTo();
+            for (Map.Entry<IPortRange, String> localEntry : localPolicy.entrySet()) {
+              IPortRange localPortRange = localEntry.getKey();
+              if (localPortRange.getFrom() > portTo) {
+                // Past portRange.to, end iteration
+                break;
+              }
+              if (portRange.overlaps(localPortRange)) {
+                String localType = localEntry.getValue();
+                if (!type.equals(localType)) {
+                  conflicts.put(localPortRange, localType);
+                }
               }
             }
           }
+          if (!conflicts.isEmpty()) {
+            throw new IllegalStateException("Port ranges (" + portRanges + ") of type " + type + " conflict with other local policy: " + conflicts);
+          }
         }
-        if (!conflicts.isEmpty()) {
-          throw new IllegalStateException("Port ranges (" + portRanges + ") of type " + type + " conflict with other local policy: " + conflicts);
-        }
-      }
 
       // Coalesce the parameters
       SortedSet<IPortRange> coalesced = coalesce(new TreeSet<>(portRanges));
@@ -721,21 +721,21 @@ public final class SEManagePort {
                   // Also check if already part of local policy
                   && !existingPortRanges.contains(portRange)
           ) {
-            // Remove any extra ports that overlap the port range we're adding.
-            {
-              Iterator<IPortRange> existingIter = existingPortRanges.iterator();
-              while (existingIter.hasNext()) {
-                IPortRange existing = existingIter.next();
-                if (
-                    !coalesced.contains(existing)
-                        && existing.overlaps(portRange)
-                ) {
-                  // Remove overlapping extra port
-                  delete(existing, type);
-                  existingIter.remove();
+              // Remove any extra ports that overlap the port range we're adding.
+              {
+                Iterator<IPortRange> existingIter = existingPortRanges.iterator();
+                while (existingIter.hasNext()) {
+                  IPortRange existing = existingIter.next();
+                  if (
+                      !coalesced.contains(existing)
+                          && existing.overlaps(portRange)
+                  ) {
+                    // Remove overlapping extra port
+                    delete(existing, type);
+                    existingIter.remove();
+                  }
                 }
               }
-            }
             if (defaultType != null) {
               // When precisely overlaps default policy of a different type, have to modify into local policy
               assert !type.equals(defaultType);
