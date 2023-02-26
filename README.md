@@ -22,7 +22,7 @@ Java API for managing Security-Enhanced Linux (SELinux).
 * [Project Home](https://aoindustries.com/ao-selinux/)
 * [Changelog](https://aoindustries.com/ao-selinux/changelog)
 * [API Docs](https://aoindustries.com/ao-selinux/apidocs/)
-* [Maven Central Repository](https://search.maven.org/artifact/com.aoindustries/ao-selinux)
+* [Maven Central Repository](https://central.sonatype.com/search?namespace=com.aoindustries&q=a%3Aao-selinux)
 * [GitHub](https://github.com/ao-apps/ao-selinux)
 
 ## Features
@@ -39,7 +39,7 @@ Java API for managing Security-Enhanced Linux (SELinux).
 While migrating our servers to CentOS 7 we are running with SELinux in enforcing mode.  Our server configuration process, [AOServ Daemon](https://github.com/ao-apps/aoserv-daemon), is written in the Java programming language.  We desire a clean interface to SELinux without having to operate with `semanage` and other commands directly.
 
 ## Evaluated Alternatives
-We were unable to find any existing implementations via [GitHub](https://github.com/search?utf8=%E2%9C%93&q=java+selinux&type=Repositories&ref=searchresults), [The Central Repository](http://search.maven.org/#search|ga|1|selinux), or [Google Search](https://www.google.com/search?q=java+api+for+selinux).
+We were unable to find any existing implementations via [GitHub](https://github.com/search?utf8=%E2%9C%93&q=java+selinux&type=Repositories&ref=searchresults), [The Central Repository](https://central.sonatype.com/search?q=selinux), or [Google Search](https://www.google.com/search?q=java+api+for+selinux).
 
 ## Contact Us
 For questions or support, please [contact us](https://aoindustries.com/contact):
