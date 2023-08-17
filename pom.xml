@@ -30,7 +30,7 @@ along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
   </parent>
 
   <groupId>com.aoindustries</groupId><artifactId>ao-selinux</artifactId><version>1.1.3-POST-SNAPSHOT</version>
-  <packaging>bundle</packaging>
+  <packaging>jar</packaging>
 
   <properties>
     <module.name>com.aoindustries.selinux</module.name>
