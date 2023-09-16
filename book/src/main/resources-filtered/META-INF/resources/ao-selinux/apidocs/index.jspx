@@ -39,5 +39,6 @@ along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
     shortTitle="API Docs"
     datePublished="2017-03-10T14:02:33-06:00"
     dateModified="${ao:getLastModified('index.html')}"
+    allowRobots="false"
   />
 </jsp:root>
