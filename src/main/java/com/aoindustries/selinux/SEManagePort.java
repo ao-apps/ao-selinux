@@ -1,6 +1,6 @@
 /*
  * ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
- * Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022  AO Industries, Inc.
+ * Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2024  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -55,25 +55,22 @@ import java.util.regex.Pattern;
 /**
  * A policy is a non-overlapping mapping from (port-range, protocol) to SELinux type.
  * Wraps functions of the <code>semanage port</code> commands.
- * <p>
- * This API hides the complexity of the interactions between default policy and local modifications.
+ *
+ * <p>This API hides the complexity of the interactions between default policy and local modifications.
  * Instead, it presents the union of both as a single mapping of ports to SELinux types.
  * This means supporting things like punching holes in default policy ranges when only part of the range
  * is overridden by local policy, and also choosing to "modify" or "add" a port based on whether is
- * an exact match or partial overlap with default policy.
- * </p>
- * <p>
- * Port mappings are across all IP addresses on a server.  Thus it is impossible, for example,
+ * an exact match or partial overlap with default policy.</p>
+ *
+ * <p>Port mappings are across all IP addresses on a server.  Thus it is impossible, for example,
  * to have Apache listening on port 12345/tcp on one IP address while SSH listens on the same port 12345/tcp
  * on a different IP address, even though both of these are custom ports and would not seem to be in conflict
  * since on different IP addresses.  By detecting local policy conflicts,
  * the {@link #configure(java.util.Set, java.lang.String) port configuration} catches these
- * conflicts instead of letting two services stomp on one another.
- * </p>
- * <p>
- * TODO: Make a main method to this as command line interface, with a set of commands?
- *       Overkill? commands -&gt; Java API -&gt; semanage -&gt; python API
- * </p>
+ * conflicts instead of letting two services stomp on one another.</p>
+ *
+ * <p>TODO: Make a main method to this as command line interface, with a set of commands?
+ *       Overkill? commands -&gt; Java API -&gt; semanage -&gt; python API</p>
  *
  * @author  AO Industries, Inc.
  */
@@ -135,10 +132,9 @@ public final class SEManagePort {
 
   /**
    * Searches for any overlapping port ranges in the given set.
-   * <p>
-   * <b>Implementation Note:</b><br>
-   * This implementation is probably not the best regarding computational complexity, but is a simple implementation.
-   * </p>
+   *
+   * <p><b>Implementation Note:</b><br>
+   * This implementation is probably not the best regarding computational complexity, but is a simple implementation.</p>
    *
    * @return  The modifiable set of any port ranges involved in an overlap or an empty set if none overlapping.
    */
@@ -405,14 +401,12 @@ public final class SEManagePort {
   /**
    * Gets the default policy without any local policy modifications.
    * Adjacent ports are not coalesced.
-   * <p>
-   * Knowledge of default policy must be known in order to determine how to configure
-   * the local policy to get the desired results.
-   * </p>
-   * <p>
-   * The local policy must have already been determined, since the default policy is
-   * the result of the <code>semanage port --noheading --list</code> minus the local policy.
-   * </p>
+   *
+   * <p>Knowledge of default policy must be known in order to determine how to configure
+   * the local policy to get the desired results.</p>
+   *
+   * <p>The local policy must have already been determined, since the default policy is
+   * the result of the <code>semanage port --noheading --list</code> minus the local policy.</p>
    *
    * @return  the unmodifiable mapping of possibly overlapping port ranges to SELinux type.
    */
@@ -479,21 +473,18 @@ public final class SEManagePort {
   /**
    * Gets the effective, non-overlapping policy.
    * Local policy takes precedence over default policy.
-   * <p>
-   * The default policy is extended, as needed, to include coverage for all ports from
-   * 1 to 65535 for tcp, udp, and sctp.
-   * </p>
-   * <p>
-   * Within the default policy, more specific ports will split more general ports, such as port
+   *
+   * <p>The default policy is extended, as needed, to include coverage for all ports from
+   * 1 to 65535 for tcp, udp, and sctp.</p>
+   *
+   * <p>Within the default policy, more specific ports will split more general ports, such as port
    * <code>538/tcp=gdomap_port_t</code> splitting
    * <code>512-1023/tcp=hi_reserved_port_t</code> into two ranges <code>512-537/tcp=hi_reserved_port_t</code>
-   * and <code>539-1023/tcp=hi_reserved_port_t</code>
-   * </p>
-   * <p>
-   * To give more consistency: adjacent ports of the same SELinux type are automatically
+   * and <code>539-1023/tcp=hi_reserved_port_t</code></p>
+   *
+   * <p>To give more consistency: adjacent ports of the same SELinux type are automatically
    * coalesced.  For example, 80/tcp and 81/tcp are listed separately in default policy,
-   * but are combined into 80-81/tcp for this view.
-   * </p>
+   * but are combined into 80-81/tcp for this view.</p>
    *
    * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type, covering all ports 1 through 65535 in tcp, udp, and sctp, coalesced into minimum entries.
    */
@@ -607,51 +598,44 @@ public final class SEManagePort {
    * This includes the ability to override default policy.
    * This is the core purpose of this API: Just tell it what you want and
    * it will handle the details.
-   * <p>
-   * Before any changes are made, checks for conflicts with any other local policy.
-   * </p>
-   * <p>
-   * The provided ports are automatically {@link #coalesce(java.util.SortedMap) coalesced}
+   *
+   * <p>Before any changes are made, checks for conflicts with any other local policy.</p>
+   *
+   * <p>The provided ports are automatically {@link #coalesce(java.util.SortedMap) coalesced}
    * into the minimum number of port ranges.  For example, if both ports <code>1234/tcp</code>
    * and <code>1235/tcp</code> are requested, a single local policy of <code>1234-1235/tcp</code>
-   * is generated.
-   * </p>
-   * <p>
-   * In the first modification pass, adds any entries that are missing and not
+   * is generated.</p>
+   *
+   * <p>In the first modification pass, adds any entries that are missing and not
    * part of the default policy.  However, any conflicting local policy is
-   * removed as-needed to allow the addition of the new entry.
-   * </p>
-   * <p>
-   * While adding the local policy, there are two interactions with default policy
+   * removed as-needed to allow the addition of the new entry.</p>
+   *
+   * <p>While adding the local policy, there are two interactions with default policy
    * considered.  First, if the local policy precisely matches a default policy
    * entry of the expected type, the local policy entry is not added.  Second, if
    * the local policy has the same exact port range as a default policy entry (of
    * a different type), {@link #modify(com.aoapps.net.IPortRange, java.lang.String)}
-   * will be performed instead of {@link #add(com.aoapps.net.IPortRange, java.lang.String)}.
-   * </p>
-   * <p>
-   * In the second modification pass, any remaining extra local policy entries
+   * will be performed instead of {@link #add(com.aoapps.net.IPortRange, java.lang.String)}.</p>
+   *
+   * <p>In the second modification pass, any remaining extra local policy entries
    * for the type are removed, thus freeing these ports for use in the local policy
-   * of other SELinux types.
-   * </p>
-   * <p>
-   * When default policy is not used by this type, it is left intact
+   * of other SELinux types.</p>
+   *
+   * <p>When default policy is not used by this type, it is left intact
    * and not overridden to an {@link #defaultPolicyExtensions unreserved type}.
    * The security benefits of overriding unused default policy is limited.
    * Leaving the default policy serves two purposes: leaving a more predictable
    * configuration and allowing a different SELinux type to override the port(s)
-   * with their own local policy.
-   * </p>
-   * <p>
-   * <b>Implementation Note:</b><br>
+   * with their own local policy.</p>
+   *
+   * <p><b>Implementation Note:</b><br>
    * We could punch holes in local policy to avoid overlapping default policy,
    * but we see no conflict with local policy overlapping default policy.
    * As an example, if SSH were listening on both ports 22/tcp and 23/tcp,
    * the current implementation will create a single local policy entry
    * of 22-23/tcp, which overlaps and is partially redundant with the default
    * policy of 22/tcp.  One possible benefit of this more complete local
-   * policy is more thorough detection of local policy conflicts.
-   * </p>
+   * policy is more thorough detection of local policy conflicts.</p>
    *
    * @param  portRanges  The set of all ports that should be set to the given type.
    *                There must not be any overlap in the provided port ranges.
