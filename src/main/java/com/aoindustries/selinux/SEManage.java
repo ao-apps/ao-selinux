@@ -61,7 +61,7 @@ final class SEManage {
    *
    * @throws  IOException  when I/O exception or non-zero exit value
    */
-  static ProcessResult execSemanage(String ... args) throws IOException {
+  static ProcessResult execSemanage(String... args) throws IOException {
     String[] command = new String[1 + args.length];
     command[0] = SEMANAGE_EXE;
     System.arraycopy(args, 0, command, 1, args.length);
