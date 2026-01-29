@@ -66,7 +66,7 @@ import java.util.regex.Pattern;
  * to have Apache listening on port 12345/tcp on one IP address while SSH listens on the same port 12345/tcp
  * on a different IP address, even though both of these are custom ports and would not seem to be in conflict
  * since on different IP addresses.  By detecting local policy conflicts,
- * the {@link #configure(java.util.Set, java.lang.String) port configuration} catches these
+ * the {@link SEManagePort#configure(java.util.Set, java.lang.String) port configuration} catches these
  * conflicts instead of letting two services stomp on one another.</p>
  *
  * <p>TODO: Make a main method to this as command line interface, with a set of commands?
@@ -278,7 +278,7 @@ public final class SEManagePort {
   /**
    * Coalesce for sets of port ranges.
    *
-   * @see  #coalesce(java.util.SortedMap)
+   * @see  SEManagePort#coalesce(java.util.SortedMap)
    *
    * @return the modifiable set of coalesced port ranges.
    */
@@ -499,7 +499,7 @@ public final class SEManagePort {
   }
 
   /**
-   * See {@link #getPolicy()}.
+   * See {@link SEManagePort#getPolicy()}.
    */
   static SortedMap<IPortRange, String> parsePolicy(SortedMap<? extends IPortRange, String> localPolicy, SortedMap<? extends IPortRange, String> defaultPolicy) {
     assert assertNoOverlaps(localPolicy);
@@ -601,7 +601,7 @@ public final class SEManagePort {
    *
    * <p>Before any changes are made, checks for conflicts with any other local policy.</p>
    *
-   * <p>The provided ports are automatically {@link #coalesce(java.util.SortedMap) coalesced}
+   * <p>The provided ports are automatically {@link SEManagePort#coalesce(java.util.SortedMap) coalesced}
    * into the minimum number of port ranges.  For example, if both ports <code>1234/tcp</code>
    * and <code>1235/tcp</code> are requested, a single local policy of <code>1234-1235/tcp</code>
    * is generated.</p>
@@ -614,15 +614,15 @@ public final class SEManagePort {
    * considered.  First, if the local policy precisely matches a default policy
    * entry of the expected type, the local policy entry is not added.  Second, if
    * the local policy has the same exact port range as a default policy entry (of
-   * a different type), {@link #modify(com.aoapps.net.IPortRange, java.lang.String)}
-   * will be performed instead of {@link #add(com.aoapps.net.IPortRange, java.lang.String)}.</p>
+   * a different type), {@link SEManagePort#modify(com.aoapps.net.IPortRange, java.lang.String)}
+   * will be performed instead of {@link SEManagePort#add(com.aoapps.net.IPortRange, java.lang.String)}.</p>
    *
    * <p>In the second modification pass, any remaining extra local policy entries
    * for the type are removed, thus freeing these ports for use in the local policy
    * of other SELinux types.</p>
    *
    * <p>When default policy is not used by this type, it is left intact
-   * and not overridden to an {@link #defaultPolicyExtensions unreserved type}.
+   * and not overridden to an {@link SEManagePort#defaultPolicyExtensions unreserved type}.
    * The security benefits of overriding unused default policy is limited.
    * Leaving the default policy serves two purposes: leaving a more predictable
    * configuration and allowing a different SELinux type to override the port(s)
