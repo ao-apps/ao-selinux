@@ -37,9 +37,9 @@ along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
     shortTitle="Changelog"
     tocLevels="1"
     datePublished="2017-03-10T14:04:26-06:00"
-    dateModified="2025-07-02T23:05:45Z"
+    dateModified="2026-02-12T06:37:14Z"
   >
-    <c:set var="latestRelease" value="1.1.3" />
+    <c:set var="latestRelease" value="1.2.0" />
     <c:if test="${
       fn:endsWith('@{project.version}', '-SNAPSHOT')
       and !fn:endsWith('@{project.version}', '-POST-SNAPSHOT')
@@ -51,12 +51,21 @@ along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
         groupId="@{project.groupId}"
         artifactId="@{documented.artifactId}"
         scmUrl="@{project.scm.url}"
-      >
-        <ul>
-          <li>Minimum Java version changed from 1.8 to 11.</li>
-        </ul>
-      </changelog:release>
+      />
     </c:if>
+
+    <changelog:release
+      projectName="@{documented.name}"
+      version="1.2.0"
+      datePublished="2026-02-12T06:37:14Z"
+      groupId="@{project.groupId}"
+      artifactId="@{documented.artifactId}"
+      scmUrl="@{project.scm.url}"
+    >
+      <ul>
+        <li>Minimum Java version changed from 1.8 to 11.</li>
+      </ul>
+    </changelog:release>
 
     <changelog:release
       projectName="@{documented.name}"
