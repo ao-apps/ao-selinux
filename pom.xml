@@ -29,12 +29,12 @@ along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
     <relativePath>../oss/parent/pom.xml</relativePath>
   </parent>
 
-  <groupId>com.aoindustries</groupId><artifactId>ao-selinux</artifactId><version>1.2.0</version>
+  <groupId>com.aoindustries</groupId><artifactId>ao-selinux</artifactId><version>1.2.0-POST-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <properties>
     <!-- Must be set to ${git.commit.time} for snapshots or ISO 8601 timestamp for releases. -->
-    <project.build.outputTimestamp>2026-02-12T06:36:32Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>${git.commit.time}</project.build.outputTimestamp>
     <module.name>com.aoindustries.selinux</module.name>
 
     <javadoc.breadcrumbs><![CDATA[<a target="${javadoc.target}" href="${project.url}">${project.name}</a>]]></javadoc.breadcrumbs>
@@ -74,7 +74,7 @@ along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
     <connection>scm:git:git://github.com/ao-apps/ao-selinux.git</connection>
     <developerConnection>scm:git:git@github.com:ao-apps/ao-selinux.git</developerConnection>
     <url>https://github.com/ao-apps/ao-selinux</url>
-    <tag>ao-selinux-1.2.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
