@@ -37,6 +37,7 @@ binding.setVariable('upstreamProjects', [
   'oss/collections', // <groupId>com.aoapps</groupId><artifactId>ao-collections</artifactId>
   'oss/lang', // <groupId>com.aoapps</groupId><artifactId>ao-lang</artifactId>
   'oss/net-types', // <groupId>com.aoapps</groupId><artifactId>ao-net-types</artifactId>
+  // No Jenkins: <groupId>com.github.spotbugs</groupId><artifactId>spotbugs-annotations</artifactId>
 
   // Test Direct
   // No Jenkins: <groupId>junit</groupId><artifactId>junit</artifactId>

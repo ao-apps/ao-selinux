@@ -1,6 +1,6 @@
 /*
  * ao-selinux - Java API for managing Security-Enhanced Linux (SELinux).
- * Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2024, 2025  AO Industries, Inc.
+ * Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2024, 2025, 2026  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -30,6 +30,7 @@ import com.aoapps.net.IPortRange;
 import com.aoapps.net.Port;
 import com.aoapps.net.PortRange;
 import com.aoapps.net.Protocol;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -488,6 +489,10 @@ public final class SEManagePort {
    *
    * @return  the unmodifiable mapping of non-overlapping port ranges to SELinux type, covering all ports 1 through 65535 in tcp, udp, and sctp, coalesced into minimum entries.
    */
+  @SuppressFBWarnings(
+      value = "USO_UNSAFE_OBJECT_SYNCHRONIZATION",
+      justification = "Synchronization on SEManage.semanageLock is intended for all accesses within this package."
+  )
   public static SortedMap<IPortRange, String> getPolicy() throws IOException {
     SortedMap<IPortRange, String> localPolicy;
     SortedMap<IPortRange, String> defaultPolicy;
@@ -647,6 +652,10 @@ public final class SEManagePort {
    * @throws  IllegalArgumentException  if any overlapping port numbers found
    * @throws  IllegalStateException  if detected overlap with local policy of a different type
    */
+  @SuppressFBWarnings(
+      value = "USO_UNSAFE_OBJECT_SYNCHRONIZATION",
+      justification = "Synchronization on SEManage.semanageLock is intended for all accesses within this package."
+  )
   public static boolean configure(Set<? extends IPortRange> portRanges, String type) throws IllegalArgumentException, IllegalStateException, IOException {
     // There must not be any overlapping port ranges
     {

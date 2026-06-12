@@ -136,6 +136,11 @@ along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
                       <includes>element-list, package-list</includes>
                       <outputDirectory>${project.build.directory}/offlineLinks/com.aoapps/ao-net-types</outputDirectory>
                     </artifactItem>
+                    <artifactItem>
+                      <groupId>com.github.spotbugs</groupId><artifactId>spotbugs-annotations</artifactId><classifier>javadoc</classifier>
+                      <includes>element-list, package-list</includes>
+                      <outputDirectory>${project.build.directory}/offlineLinks/com.github.spotbugs/spotbugs-annotations</outputDirectory>
+                    </artifactItem>
                     <!-- Test Direct -->
                     <artifactItem>
                       <groupId>junit</groupId><artifactId>junit</artifactId><classifier>javadoc</classifier>
@@ -164,6 +169,10 @@ along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
                   <url>https://oss.aoapps.com/net-types/apidocs/</url>
                   <location>${project.build.directory}/offlineLinks/com.aoapps/ao-net-types</location>
                 </offlineLink>
+                <offlineLink>
+                  <url>https://javadoc.io/doc/com.github.spotbugs/spotbugs-annotations/${com.github.spotbugs:spotbugs-annotations:jar.version}/</url>
+                  <location>${project.build.directory}/offlineLinks/com.github.spotbugs/spotbugs-annotations</location>
+                </offlineLink>
                 <!-- Test Direct -->
                 <offlineLink>
                   <url>https://junit.org/junit4/javadoc/latest/</url>
@@ -188,6 +197,9 @@ along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
       </dependency>
       <dependency>
         <groupId>com.aoapps</groupId><artifactId>ao-net-types</artifactId><version>3.0.0${POST-SNAPSHOT}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.spotbugs</groupId><artifactId>spotbugs-annotations</artifactId><version>4.10.2</version>
       </dependency>
       <!-- Transitive -->
       <dependency>
@@ -218,6 +230,10 @@ along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
     </dependency>
     <dependency>
       <groupId>com.aoapps</groupId><artifactId>ao-net-types</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.spotbugs</groupId><artifactId>spotbugs-annotations</artifactId>
+      <optional>true</optional>
     </dependency>
     <!-- Test Direct -->
     <dependency>
