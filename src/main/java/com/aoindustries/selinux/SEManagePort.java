@@ -247,7 +247,7 @@ public final class SEManagePort {
     assert assertNoOverlaps(policy);
     SortedMap<IPortRange, String> result = new TreeMap<>();
     // Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
-    for (Protocol protocol : new Protocol[]{Protocol.TCP, Protocol.UDP, Protocol.SCTP}) {
+    for (Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP, Protocol.SCTP}) {
       IPortRange lastPortRange = null;
       String lastType = null;
       for (Map.Entry<? extends IPortRange, String> entry : policy.entrySet()) {
@@ -289,7 +289,7 @@ public final class SEManagePort {
     assert assertNoOverlaps(portRanges);
     SortedSet<IPortRange> result = new TreeSet<>();
     // Because the ports are non-overlapping and sorted, this can be done in one pass per protocol
-    for (Protocol protocol : new Protocol[]{Protocol.TCP, Protocol.UDP, Protocol.SCTP}) {
+    for (Protocol protocol : new Protocol[] {Protocol.TCP, Protocol.UDP, Protocol.SCTP}) {
       IPortRange lastPortRange = null;
       for (IPortRange portRange : portRanges) {
         if (protocol == portRange.getProtocol()) {
