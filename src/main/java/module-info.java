@@ -21,7 +21,6 @@
  * along with ao-selinux.  If not, see <https://www.gnu.org/licenses/>.
  */
 module com.aoindustries.selinux {
-  exports com.aoindustries.selinux;
   // Direct
   requires com.aoapps.collections; // <groupId>com.aoapps</groupId><artifactId>ao-collections</artifactId>
   requires com.aoapps.lang; // <groupId>com.aoapps</groupId><artifactId>ao-lang</artifactId>
@@ -29,4 +28,6 @@ module com.aoindustries.selinux {
   requires static com.github.spotbugs.annotations; // <groupId>com.github.spotbugs</groupId><artifactId>spotbugs-annotations</artifactId>
   // Java SE
   requires java.logging;
+
+  exports com.aoindustries.selinux;
 }
